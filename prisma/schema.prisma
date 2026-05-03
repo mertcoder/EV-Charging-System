@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String            @id @default(cuid())
+  name           String
+  email          String            @unique
+  role           String
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  vehicles       Vehicle[]
+  wallet         Wallet?
+  reservations   Reservation[]
+  sessions       ChargingSession[]
+  issues         IssueReport[]
+  notifications  Notification[]
+  favorites      FavoriteStation[]
+  auditLogs      AuditLog[]
+}
+
+model Vehicle {
+  id                 String        @id @default(cuid())
+  userId             String
+  brand              String
+  modelName          String
+  batteryCapacityKwh Float
+  connectorType      String
+  plateNumber        String        @unique
+  createdAt          DateTime      @default(now())
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservations       Reservation[]
+}
+
+model Wallet {
+  id           String        @id @default(cuid())
+  userId       String        @unique
+  balanceCents Int           @default(0)
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  walletId      String
+  type          String
+  amountCents   Int
+  description   String
+  receiptNumber String?
+  createdAt     DateTime @default(now())
+  wallet        Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
+}
+
+model ChargingStation {
+  id             String            @id @default(cuid())
+  name           String
+  address        String
+  latitude       Float
+  longitude      Float
+  operatingStart String
+  operatingEnd   String
+  status         String
+  createdAt      DateTime          @default(now())
+  chargers       Charger[]
+  issues         IssueReport[]
+  favorites      FavoriteStation[]
+}
+
+model Charger {
+  id            String            @id @default(cuid())
+  stationId     String
+  code          String
+  chargerType   String
+  connectorType String
+  powerKw       Int
+  status        String
+  pricePerKwhCents Int
+  station       ChargingStation   @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  reservations  Reservation[]
+  sessions      ChargingSession[]
+
+  @@unique([stationId, code])
+}
+
+model Reservation {
+  id            String           @id @default(cuid())
+  userId        String
+  vehicleId     String
+  chargerId     String
+  startTime     DateTime
+  endTime       DateTime
+  status        String
+  estimatedCostCents Int
+  holdAmountCents Int @default(0)
+  refundAmountCents  Int            @default(0)
+  createdAt     DateTime         @default(now())
+  cancelledAt   DateTime?
+  noShowAt      DateTime?
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle       Vehicle          @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  charger       Charger          @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  session       ChargingSession?
+
+  @@index([chargerId, status, startTime])
+}
+
+model ChargingSession {
+  id            String       @id @default(cuid())
+  reservationId String       @unique
+  userId        String
+  chargerId     String
+  startTime     DateTime
+  endTime       DateTime?
+  startSoc      Float
+  endSoc        Float?
+  targetSoc     Float?
+  energyKwh     Float        @default(0)
+  unitPriceCents Int
+  totalCostCents Int        @default(0)
+  status        String
+  receiptNumber String?
+  syncStatus    String       @default("SYNCED")
+  reservation   Reservation  @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  charger       Charger      @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model IssueReport {
+  id          String          @id @default(cuid())
+  userId      String
+  stationId   String
+  category    String
+  description String?
+  status      String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  station     ChargingStation @relation(fields: [stationId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model FavoriteStation {
+  id        String          @id @default(cuid())
+  userId    String
+  stationId String
+  addedAt   DateTime        @default(now())
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  station   ChargingStation @relation(fields: [stationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stationId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  entity      String
+  entityId    String?
+  details     String
+  prevHash    String
+  entryHash   String
+  createdAt   DateTime @default(now())
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+model FailedLoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  count     Int      @default(0)
+  lastAttemptAt DateTime @default(now())
+  lockedUntil DateTime?
+
+  @@unique([email])
+}
+
+model RetentionPolicy {
+  id             String   @id @default(cuid())
+  entity         String   @unique
+  retentionYears Int
+  description    String
+  createdAt      DateTime @default(now())
+}

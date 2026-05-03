@@ -1,0 +1,49 @@
+{
+  "name": "group28-ev-charging-prototype",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run db:generate && npm run db:init && npm run db:seed && concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:web": "vite --host 127.0.0.1 --port 5173",
+    "dev:api": "tsx watch server/index.ts",
+    "build": "npm run db:generate && tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "npm run db:generate && npm run db:init && vitest run",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:init": "node scripts/init-db.mjs",
+    "db:seed": "prisma db seed"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.17.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "lucide-react": "^0.546.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.7.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@types/supertest": "^6.0.3",
+    "concurrently": "^9.2.1",
+    "jsdom": "^27.0.0",
+    "prisma": "^6.17.1",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.9",
+    "vitest": "^3.2.4"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}
