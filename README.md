@@ -11,6 +11,9 @@ Technology stack:
 ## Run
 
 ```bash
+cp .env.example .env
+# Edit .env and set VITE_GOOGLE_MAPS_API_KEY to your own Google Maps key
+# (the app falls back to a non-Google map when the key is missing)
 npm install
 npm run dev
 ```
