@@ -38,13 +38,13 @@ export function registerAdminRoutes(app: Express) {
 app.post("/api/admin/stations", requireRole(["ADMINISTRATOR"]), async (req, res, next) => {
   try {
     const parsed = z.object({
-      name: z.string().min(1),
-      address: z.string().min(1),
+      name: z.string().trim().min(1, "Station name is required."),
+      address: z.string().trim().min(1, "Address is required."),
       latitude: z.coerce.number(),
       longitude: z.coerce.number(),
       operatingStart: z.string().default("08:00"),
       operatingEnd: z.string().default("22:00"),
-      chargerCode: z.string().min(1).optional(),
+      chargerCode: z.string().trim().min(1).optional(),
       chargerType: z.enum(["AC", "DC"]).default("DC"),
       connectorType: z.enum(["TYPE_2", "CCS", "CHADEMO"]).default("CCS"),
       powerKw: z.coerce.number().int().positive().default(50),
@@ -54,9 +54,17 @@ app.post("/api/admin/stations", requireRole(["ADMINISTRATOR"]), async (req, res,
       res.status(400).json({ errors: formatZodError(parsed.error) });
       return;
     }
+    const normalizedName = parsed.data.name.replace(/\s+/g, " ").trim();
+    const compareKey = normalizedName.toLowerCase();
+    const allStations = await prisma.chargingStation.findMany({ select: { name: true } });
+    const duplicate = allStations.find((station) => station.name.trim().toLowerCase() === compareKey);
+    if (duplicate) {
+      res.status(400).json({ errors: [`A station named "${duplicate.name}" already exists. Use a unique name or add a charger to the existing station instead.`] });
+      return;
+    }
     const station = await prisma.chargingStation.create({
       data: {
-        name: parsed.data.name,
+        name: normalizedName,
         address: parsed.data.address,
         latitude: parsed.data.latitude,
         longitude: parsed.data.longitude,
