@@ -31,6 +31,7 @@ export function LocationPicker({ apiKey, value, onChange }: LocationPickerProps)
       .then(() => {
         if (cancelled || !mapEl.current || !window.google) return;
         if (mapInstance.current) {
+          mapInstance.current.setOptions({ keyboardShortcuts: false, gestureHandling: "greedy", disableDefaultUI: true, zoomControl: true, clickableIcons: false });
           setReady(true);
           return;
         }
@@ -42,8 +43,14 @@ export function LocationPicker({ apiKey, value, onChange }: LocationPickerProps)
           zoomControl: true,
           keyboardShortcuts: false,
           gestureHandling: "greedy",
-          clickableIcons: false
+          clickableIcons: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          rotateControl: false,
+          scaleControl: false
         });
+        mapInstance.current.setOptions({ keyboardShortcuts: false });
         markerInstance.current = new window.google.maps.Marker({
           map: mapInstance.current,
           position: center,
@@ -64,6 +71,20 @@ export function LocationPicker({ apiKey, value, onChange }: LocationPickerProps)
           const lng = event.latLng.lng();
           onChangeRef.current({ lat, lng });
         });
+        // Belt-and-braces: re-apply keyboard-shortcut suppression after first render and on resize
+        const enforceOptions = () => {
+          mapInstance.current?.setOptions({ keyboardShortcuts: false, disableDefaultUI: true, zoomControl: true });
+          if (mapEl.current) {
+            mapEl.current.querySelectorAll<HTMLElement>('[aria-label*="Keyboard shortcuts" i], [title*="Keyboard shortcuts" i]').forEach((el) => {
+              el.style.display = "none";
+            });
+          }
+        };
+        enforceOptions();
+        setTimeout(enforceOptions, 500);
+        setTimeout(enforceOptions, 1500);
+        mapInstance.current.addListener("idle", enforceOptions);
+        mapInstance.current.addListener("tilesloaded", enforceOptions);
         setReady(true);
       })
       .catch((error) => setLoadError(error instanceof Error ? error.message : String(error)));
@@ -88,7 +109,7 @@ export function LocationPicker({ apiKey, value, onChange }: LocationPickerProps)
   return (
     <div className="location-picker">
       <div ref={mapEl} className="location-picker-map" />
-      <small className="map-note">Click anywhere on the map or drag the pin to set the station location.</small>
+      <small className="location-picker-hint">Click anywhere on the map or drag the pin to set the station location.</small>
     </div>
   );
 }

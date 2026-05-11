@@ -55,7 +55,7 @@ export function OpsStep(props: {
     <section className="ops-grid">
       <div className="hero-panel">
         <PanelTitle icon={<Wrench />} title="Chargers" />
-        <div className="compact-table">
+        <div className="charger-grid">
           {props.data.stations.flatMap((station) =>
             station.chargers.map((charger) => {
               const draftStr = props.chargerPriceDrafts[charger.id];
@@ -64,32 +64,41 @@ export function OpsStep(props: {
               const delta = hasDraft ? draftNum - charger.pricePerKwh : 0;
               const pct = hasDraft && charger.pricePerKwh > 0 ? (delta / charger.pricePerKwh) * 100 : 0;
               const direction = delta > 0 ? "up" : "down";
+              const statusKey = charger.status.toLowerCase().replace("_", "-");
               return (
-                <div className="charger-row" key={charger.id}>
-                  <div className="charger-row-header">
-                    <div>
-                      <strong className="mono">{charger.code}</strong>
-                      <span>{station.name} - {charger.connectorType} - <span className="mono">{money(charger.pricePerKwh)}</span></span>
+                <article className={`charger-card status-${statusKey}`} key={charger.id}>
+                  <header className="charger-card-header">
+                    <div className="charger-card-identity">
+                      <span className="charger-card-station">{station.name}</span>
+                      <strong className="charger-card-name">{charger.code}</strong>
+                      <span className="charger-card-meta">
+                        {charger.connectorType.replace("_", " ")} · {charger.powerKw} kW
+                      </span>
                     </div>
+                    <span className={`status-pill status-${statusKey}`}>
+                      {charger.status.replace("_", " ").toLowerCase()}
+                    </span>
+                  </header>
+                  <div className="charger-card-current">
+                    <small>Current price</small>
+                    <strong>{money(charger.pricePerKwh)}<em>/kWh</em></strong>
                   </div>
-                  <div className="charger-row-controls">
-                    <div className="price-edit-field">
-                      <label>
-                        <span>New price per kWh</span>
-                        <div className="input-with-suffix wide-price">
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            min="0"
-                            step="0.1"
-                            value={props.chargerPriceDrafts[charger.id] ?? String(charger.pricePerKwh)}
-                            onChange={(event) => props.setChargerPriceDrafts({ ...props.chargerPriceDrafts, [charger.id]: event.target.value })}
-                          />
-                          <em>TL</em>
-                        </div>
-                      </label>
-                    </div>
-                    <label className="status-edit-field">
+                  <div className="charger-card-controls">
+                    <label className="charger-card-field">
+                      <span>New price</span>
+                      <div className="input-with-suffix wide-price">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          step="0.1"
+                          value={props.chargerPriceDrafts[charger.id] ?? String(charger.pricePerKwh)}
+                          onChange={(event) => props.setChargerPriceDrafts({ ...props.chargerPriceDrafts, [charger.id]: event.target.value })}
+                        />
+                        <em>TL</em>
+                      </div>
+                    </label>
+                    <label className="charger-card-field">
                       <span>Status</span>
                       <select value={charger.status} onChange={(event) => props.onUpdateCharger(charger, event.target.value as ChargerStatus, Number(props.chargerPriceDrafts[charger.id] ?? charger.pricePerKwh))}>
                         <option value="AVAILABLE">Available</option>
@@ -98,9 +107,6 @@ export function OpsStep(props: {
                         <option value="OUT_OF_SERVICE">Out of service</option>
                       </select>
                     </label>
-                    <button className="secondary save-price-btn" type="button" onClick={() => props.onUpdateCharger(charger, charger.status, Number(props.chargerPriceDrafts[charger.id] ?? charger.pricePerKwh))}>
-                      Save price
-                    </button>
                   </div>
                   {hasDraft && (
                     <div className={`price-diff price-diff-${direction}`} aria-live="polite">
@@ -112,7 +118,15 @@ export function OpsStep(props: {
                       </em>
                     </div>
                   )}
-                </div>
+                  <button
+                    className="primary charger-save-btn"
+                    type="button"
+                    onClick={() => props.onUpdateCharger(charger, charger.status, Number(props.chargerPriceDrafts[charger.id] ?? charger.pricePerKwh))}
+                    disabled={!hasDraft}
+                  >
+                    {hasDraft ? "Save changes" : "No changes"}
+                  </button>
+                </article>
               );
             })
           )}

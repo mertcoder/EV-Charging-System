@@ -1,8 +1,10 @@
-import type { FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Bell, CreditCard, Lock, ShieldCheck, Star } from "lucide-react";
 import type { BootstrapPayload } from "../../shared/domain";
-import { Empty, Input, PanelTitle, SessionHistory, SimpleRow, Transactions } from "../../components/common";
+import { Empty, Input, Pagination, PanelTitle, SessionHistory, SimpleRow, Transactions } from "../../components/common";
 import { money } from "../../lib/presentation";
+
+const NOTIFICATIONS_PAGE_SIZE = 6;
 
 export function WalletStep({ data, topUpAmount, setTopUpAmount, onTopUp }: { data: BootstrapPayload; topUpAmount: string; setTopUpAmount: (value: string) => void; onTopUp: (event: FormEvent) => void }) {
   if (!data.wallet) {
@@ -38,21 +40,62 @@ export function WalletStep({ data, topUpAmount, setTopUpAmount, onTopUp }: { dat
   );
 }
 
+function notificationLabel(type: string) {
+  return ({
+    RESERVATION_CONFIRMED: "Reservation confirmed",
+    RESERVATION_CANCELLED: "Reservation cancelled",
+    RESERVATION_NO_SHOW: "Missed reservation",
+    CHARGING_STARTED: "Charging started",
+    CHARGING_COMPLETED: "Charging complete",
+    CHARGING_INTERRUPTED: "Charging interrupted",
+    LOW_BALANCE: "Low balance",
+    WALLET_TOPPED_UP: "Wallet topped up",
+    REFUND_ISSUED: "Refund issued",
+    SECURITY_ALERT: "Security alert",
+    AVAILABILITY_UPDATE: "Availability update"
+  } as Record<string, string>)[type] ?? type.replace(/_/g, " ").toLowerCase();
+}
+
+function notificationTone(type: string): "ok" | "warn" | "info" {
+  if (["LOW_BALANCE", "RESERVATION_CANCELLED", "RESERVATION_NO_SHOW", "CHARGING_INTERRUPTED", "SECURITY_ALERT"].includes(type)) return "warn";
+  if (["CHARGING_COMPLETED", "WALLET_TOPPED_UP", "REFUND_ISSUED", "RESERVATION_CONFIRMED"].includes(type)) return "ok";
+  return "info";
+}
+
 export function NotificationPanel({ notifications }: { notifications: BootstrapPayload["notifications"] }) {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(notifications.length / NOTIFICATIONS_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = useMemo(
+    () => notifications.slice(safePage * NOTIFICATIONS_PAGE_SIZE, (safePage + 1) * NOTIFICATIONS_PAGE_SIZE),
+    [notifications, safePage]
+  );
+
   return (
-    <div className="side-panel">
+    <div className="hero-panel wide-panel">
       <PanelTitle icon={<Bell />} title="Notifications" />
       {notifications.length === 0 ? (
         <Empty text="No notifications yet." />
       ) : (
-        <div className="compact-table">
-          {notifications.slice(0, 6).map((notification) => (
-            <div className="simple-row" key={notification.id}>
-              <strong>{notification.type.replace(/_/g, " ")}</strong>
-              <span>{notification.message}</span>
-            </div>
-          ))}
-        </div>
+        <>
+          <ul className="notification-list">
+            {pageItems.map((notification) => {
+              const tone = notificationTone(notification.type);
+              return (
+                <li className={`notification-item tone-${tone}`} key={notification.id}>
+                  <span className={`notification-dot dot-${tone}`} aria-hidden />
+                  <div className="notification-body">
+                    <strong>{notificationLabel(notification.type)}</strong>
+                    <span>{notification.message}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {totalPages > 1 && (
+            <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
+          )}
+        </>
       )}
     </div>
   );

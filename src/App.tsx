@@ -13,6 +13,7 @@ import {
   Lock,
   LogOut,
   MapPinned,
+  Moon,
   Navigation,
   Plus,
   PlugZap,
@@ -20,6 +21,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Star,
+  Sun,
   Trash2,
   UserCircle,
   UserCog,
@@ -134,6 +136,15 @@ export default function App() {
   const [data, setData] = useState<BootstrapPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "bad" | "info"; text: string } | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "light";
+    return (localStorage.getItem("group28-theme") as "light" | "dark") ?? "light";
+  });
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem("group28-theme", theme); } catch {}
+  }, [theme]);
   const [confirmState, setConfirmState] = useState<{
     title: string;
     message: string;
@@ -780,22 +791,33 @@ export default function App() {
 
       <main className="workspace">
         <header className="topbar">
-          <div>
+          <div className="topbar-side topbar-left">
             <p className="eyebrow">{subtitleFor(view)}</p>
             <h1>{titleFor(view)}</h1>
           </div>
-          <div className="topbar-actions">
-            <span className="topbar-status" title="Real-time data refresh">
-              <span className="pulse" />
-              Live
-            </span>
-            <div className="role-switch" aria-label="Demo role">
+          <div className="role-switch-center" aria-label="Switch role">
+            <div className="role-switch" role="tablist">
+              <span
+                className="role-switch-indicator"
+                style={{
+                  transform: `translateX(${(Object.keys(roleLabels) as UserRole[]).indexOf(role) * 100}%)`
+                }}
+                aria-hidden
+              />
               {(Object.keys(roleLabels) as UserRole[]).map((item) => (
-                <button key={item} className={role === item ? "selected" : ""} onClick={() => switchRole(item)}>
+                <button
+                  key={item}
+                  role="tab"
+                  aria-selected={role === item}
+                  className={role === item ? "selected" : ""}
+                  onClick={() => switchRole(item)}
+                >
                   {roleLabels[item]}
                 </button>
               ))}
             </div>
+          </div>
+          <div className="topbar-side topbar-actions">
             <label className="account-select">
               <UserCircle />
               <select value={activeUserId} onChange={(event) => switchUser(event.target.value)} aria-label="Active account">
@@ -804,6 +826,14 @@ export default function App() {
                 ))}
               </select>
             </label>
+            <button
+              className="icon-button"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun /> : <Moon />}
+            </button>
             <button className="icon-button" onClick={refresh} title="Refresh data">
               <RefreshCw />
             </button>
@@ -835,6 +865,7 @@ export default function App() {
         />
         {loading && <div className="thin-loader" />}
 
+        <div className="view-stage" key={`${role}-${view}`}>
         {view === "vehicle" && (
           <VehicleStep
             vehicles={data.vehicles}
@@ -933,6 +964,7 @@ export default function App() {
         )}
 
         {view === "evidence" && <EvidenceStep data={data} filter={evidenceFilter} setFilter={setEvidenceFilter} />}
+        </div>
       </main>
     </div>
   );

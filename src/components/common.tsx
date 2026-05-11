@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { History, ReceiptText } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, History, ReceiptText } from "lucide-react";
 import type { BootstrapPayload, ChargingSession } from "../shared/domain";
 import { money, statusLabel, transactionLabel } from "../lib/presentation";
 
@@ -115,31 +115,113 @@ export function SessionHistory({ sessions }: { sessions: ChargingSession[] }) {
   );
 }
 
+const TRANSACTIONS_PAGE_SIZE = 6;
+
 export function Transactions({ data }: { data: BootstrapPayload }) {
   const transactions = data.wallet?.transactions ?? [];
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(transactions.length / TRANSACTIONS_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = useMemo(
+    () => transactions.slice(safePage * TRANSACTIONS_PAGE_SIZE, (safePage + 1) * TRANSACTIONS_PAGE_SIZE),
+    [transactions, safePage]
+  );
+
   return (
     <div className="hero-panel wide-panel">
       <PanelTitle icon={<ReceiptText />} title="Transactions and receipts" />
       {transactions.length === 0 ? (
         <Empty text="No transactions yet." />
       ) : (
-        <div className="compact-table">
-          {transactions.map((transaction) => (
-            <div className="table-row" key={transaction.id}>
-              <div>
-                <strong>{transactionLabel(transaction.type)}</strong>
-                <span>{transaction.description}</span>
-              </div>
-              <div className="right-text">
-                <strong className={`mono ${transaction.type === "TOP_UP" || transaction.type === "REFUND" ? "credit" : "debit"}`}>
-                  {transaction.type === "TOP_UP" || transaction.type === "REFUND" ? "+" : "-"}{money(Math.abs(transaction.amount))}
-                </strong>
-                <span className="mono">{transaction.receiptNumber ?? "N/A"}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <>
+          <ul className="transaction-list">
+            {pageItems.map((transaction) => {
+              const isCredit = transaction.type === "TOP_UP" || transaction.type === "REFUND";
+              return (
+                <li className="transaction-row" key={transaction.id}>
+                  <div className="transaction-row-main">
+                    <strong>{transactionLabel(transaction.type)}</strong>
+                    <span>{transaction.description}</span>
+                  </div>
+                  <div className="transaction-row-amount">
+                    <strong className={`mono ${isCredit ? "credit" : "debit"}`}>
+                      {isCredit ? "+" : "-"}{money(Math.abs(transaction.amount))}
+                    </strong>
+                    <span className="mono">{transaction.receiptNumber ?? "N/A"}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {totalPages > 1 && (
+            <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+export function Pagination({
+  page,
+  totalPages,
+  onChange
+}: {
+  page: number;
+  totalPages: number;
+  onChange: (next: number) => void;
+}) {
+  const maxButtons = 5;
+  const half = Math.floor(maxButtons / 2);
+  let start = Math.max(0, page - half);
+  let end = Math.min(totalPages, start + maxButtons);
+  if (end - start < maxButtons) start = Math.max(0, end - maxButtons);
+  const visible: number[] = [];
+  for (let i = start; i < end; i += 1) visible.push(i);
+
+  return (
+    <nav className="pagination" aria-label="Pagination">
+      <button
+        type="button"
+        className="pagination-step"
+        onClick={() => onChange(Math.max(0, page - 1))}
+        disabled={page === 0}
+        aria-label="Previous page"
+      >
+        <ChevronLeft />
+      </button>
+      {start > 0 && (
+        <>
+          <button type="button" className="pagination-num" onClick={() => onChange(0)}>1</button>
+          {start > 1 && <span className="pagination-ellipsis">…</span>}
+        </>
+      )}
+      {visible.map((index) => (
+        <button
+          key={index}
+          type="button"
+          className={`pagination-num ${index === page ? "active" : ""}`}
+          onClick={() => onChange(index)}
+          aria-current={index === page ? "page" : undefined}
+        >
+          {index + 1}
+        </button>
+      ))}
+      {end < totalPages && (
+        <>
+          {end < totalPages - 1 && <span className="pagination-ellipsis">…</span>}
+          <button type="button" className="pagination-num" onClick={() => onChange(totalPages - 1)}>{totalPages}</button>
+        </>
+      )}
+      <button
+        type="button"
+        className="pagination-step"
+        onClick={() => onChange(Math.min(totalPages - 1, page + 1))}
+        disabled={page >= totalPages - 1}
+        aria-label="Next page"
+      >
+        <ChevronRight />
+      </button>
+    </nav>
   );
 }
