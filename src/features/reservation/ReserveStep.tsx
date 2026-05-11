@@ -133,7 +133,13 @@ function BookingPanel(props: Parameters<typeof ReserveStep>[0] & { compatibility
       </div>
 
       <div className="booking-section">
-        <div className="booking-section-label">Your match</div>
+        <div className="booking-section-label-row">
+          <span className="booking-section-label">Your match</span>
+          <span className={`match-status-pill ${props.compatibility ? "ok" : "bad"}`}>
+            {props.compatibility ? <Check /> : <AlertTriangle />}
+            {props.compatibility ? "Compatible" : "Incompatible"}
+          </span>
+        </div>
         <div className="match-card">
           <div className="match-side">
             <small>Vehicle</small>
@@ -145,9 +151,6 @@ function BookingPanel(props: Parameters<typeof ReserveStep>[0] & { compatibility
               ))}
             </select>
             <span className="match-meta">{props.selectedVehicle?.connectorType}</span>
-          </div>
-          <div className={`match-connector ${props.compatibility ? "ok" : "bad"}`} aria-hidden>
-            {props.compatibility ? <Check /> : <AlertTriangle />}
           </div>
           <div className="match-side">
             <small>Charger</small>
