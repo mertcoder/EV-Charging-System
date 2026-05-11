@@ -3344,6 +3344,219 @@ select option {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* -------------------- Help / Guide -------------------- */
+.help-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.help-intro h2 {
+  margin-bottom: 6px;
+}
+
+.help-intro p {
+  max-width: 64ch;
+}
+
+.help-panel-title {
+  margin-bottom: 18px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.help-steps {
+  display: grid;
+  gap: 18px;
+}
+
+.help-step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 18px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.help-step:hover {
+  border-color: var(--border-bold);
+  background: var(--surface-3);
+}
+
+.help-step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  border: 1px solid rgba(184, 137, 59, 0.20);
+}
+
+.help-step-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.help-step h4 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  letter-spacing: -0.005em;
+}
+
+.help-step p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.help-step p code,
+.help-step p em {
+  font-style: normal;
+  font-weight: 500;
+}
+
+.help-step p code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  letter-spacing: 0.005em;
+}
+
+.help-step p strong {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.help-step p em {
+  color: var(--gold-ink);
+  font-style: italic;
+}
+
+.faq-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faq-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-1);
+  overflow: hidden;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.faq-item.open {
+  background: var(--surface-2);
+  border-color: var(--border-bold);
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.faq-question:hover {
+  color: var(--gold-ink);
+}
+
+.faq-question svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  transition: transform 200ms ease, color var(--transition);
+  flex-shrink: 0;
+}
+
+.faq-item.open .faq-question svg {
+  transform: rotate(180deg);
+  color: var(--gold);
+}
+
+.faq-answer {
+  padding: 0 18px 18px;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.reference-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.reference-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+}
+
+.reference-card svg {
+  width: 22px;
+  height: 22px;
+  color: var(--gold);
+}
+
+.reference-card strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.reference-card span {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.reference-card code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
 /* -------------------- Booking panel (simplified) -------------------- */
 .booking-section {
   margin-top: 24px;

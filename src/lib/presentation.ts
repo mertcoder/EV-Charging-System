@@ -10,7 +10,8 @@ export function titleFor(view: ViewId) {
     charge: "Charging session",
     wallet: "Wallet",
     ops: "Operations center",
-    evidence: "Activity and system"
+    evidence: "Activity and system",
+    help: "Guide"
   }[view];
 }
 
@@ -21,7 +22,8 @@ export function subtitleFor(view: ViewId) {
     charge: "Track the active session live",
     wallet: "Balance, top-ups, and transaction history",
     ops: "Station, charger, and issue management",
-    evidence: "System health and audit records"
+    evidence: "System health and audit records",
+    help: "How-to walkthrough and frequently asked questions"
   }[view];
 }
 

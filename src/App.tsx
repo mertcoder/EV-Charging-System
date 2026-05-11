@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   BarChart3,
   Bell,
+  BookOpen,
   Car,
   Check,
   ChevronRight,
@@ -48,6 +49,7 @@ import { ConfirmDialog } from "./components/ConfirmDialog";
 import { SignInScreen } from "./features/account/SignInScreen";
 import { ChargeStep } from "./features/charging/ChargeStep";
 import { EvidenceStep } from "./features/evidence/EvidenceStep";
+import { HelpStep } from "./features/help/HelpStep";
 import { OpsStep } from "./features/operations/OpsStep";
 import { ReserveStep } from "./features/reservation/ReserveStep";
 import { VehicleStep } from "./features/vehicle/VehicleStep";
@@ -55,7 +57,7 @@ import { WalletStep } from "./features/wallet/WalletStep";
 import { buildSlots, friendlyError, money, subtitleFor, titleFor } from "./lib/presentation";
 import { firstAvailableSlotIndex } from "./shared/reservationSlots";
 
-type ViewId = "vehicle" | "reserve" | "charge" | "wallet" | "ops" | "evidence";
+type ViewId = "vehicle" | "reserve" | "charge" | "wallet" | "ops" | "evidence" | "help";
 type StationDraft = Pick<ChargingStation, "name" | "address" | "operatingStart" | "operatingEnd" | "status">;
 type StationFormState = {
   mode: "new" | "existing";
@@ -91,7 +93,7 @@ type ReportsPayload = {
   availabilityTarget: string;
 };
 
-type NavSection = "drive" | "operate" | "system";
+type NavSection = "drive" | "operate" | "system" | "support";
 
 const viewItems: Array<{ id: ViewId; label: string; icon: ReactNode; section: NavSection }> = [
   { id: "vehicle", label: "My EV", icon: <Car />, section: "drive" },
@@ -99,13 +101,15 @@ const viewItems: Array<{ id: ViewId; label: string; icon: ReactNode; section: Na
   { id: "charge", label: "Charging", icon: <Gauge />, section: "drive" },
   { id: "wallet", label: "Wallet", icon: <WalletCards />, section: "drive" },
   { id: "ops", label: "Operations", icon: <Wrench />, section: "operate" },
-  { id: "evidence", label: "Activity", icon: <Activity />, section: "system" }
+  { id: "evidence", label: "Activity", icon: <Activity />, section: "system" },
+  { id: "help", label: "Guide", icon: <BookOpen />, section: "support" }
 ];
 
 const navSectionLabels: Record<NavSection, string> = {
   drive: "Drive",
   operate: "Operate",
-  system: "System"
+  system: "System",
+  support: "Help"
 };
 
 const roleLabels: Record<UserRole, string> = {
@@ -121,9 +125,9 @@ const defaultUserIds: Record<UserRole, string> = {
 };
 
 const roleViews: Record<UserRole, ViewId[]> = {
-  EV_DRIVER: ["vehicle", "reserve", "charge", "wallet"],
-  STATION_OPERATOR: ["ops"],
-  ADMINISTRATOR: ["ops", "evidence"]
+  EV_DRIVER: ["vehicle", "reserve", "charge", "wallet", "help"],
+  STATION_OPERATOR: ["ops", "help"],
+  ADMINISTRATOR: ["ops", "evidence", "help"]
 };
 
 const mapApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
@@ -964,6 +968,7 @@ export default function App() {
         )}
 
         {view === "evidence" && <EvidenceStep data={data} filter={evidenceFilter} setFilter={setEvidenceFilter} />}
+        {view === "help" && <HelpStep role={role} />}
         </div>
       </main>
     </div>

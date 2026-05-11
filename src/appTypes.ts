@@ -1,6 +1,6 @@
 import type { AuditLog, ChargingStation } from "./shared/domain";
 
-export type ViewId = "vehicle" | "reserve" | "charge" | "wallet" | "ops" | "evidence";
+export type ViewId = "vehicle" | "reserve" | "charge" | "wallet" | "ops" | "evidence" | "help";
 export type StationDraft = Pick<ChargingStation, "name" | "address" | "operatingStart" | "operatingEnd" | "status">;
 export type StationFormState = {
   mode: "new" | "existing";
@@ -35,4 +35,4 @@ export type ReportsPayload = {
   };
   availabilityTarget: string;
 };
-export type NavSection = "drive" | "operate" | "system";
+export type NavSection = "drive" | "operate" | "system" | "support";
