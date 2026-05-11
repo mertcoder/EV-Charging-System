@@ -3,6 +3,8 @@ import type { AuditLog, ChargingStation } from "./shared/domain";
 export type ViewId = "vehicle" | "reserve" | "charge" | "wallet" | "ops" | "evidence";
 export type StationDraft = Pick<ChargingStation, "name" | "address" | "operatingStart" | "operatingEnd" | "status">;
 export type StationFormState = {
+  mode: "new" | "existing";
+  existingStationId: string;
   name: string;
   address: string;
   latitude: string;

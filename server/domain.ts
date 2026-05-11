@@ -19,13 +19,25 @@ export const reservationInputSchema = z.object({
 });
 
 export const sessionStartSchema = z.object({
-  reservationId: z.string().min(1),
-  startSoc: z.coerce.number().min(0).max(100).default(20),
-  targetSoc: z.coerce.number().min(1).max(100).optional()
+  reservationId: z.string().min(1, "Please select a reservation before starting."),
+  startSoc: z.coerce
+    .number({ message: "Enter a starting state of charge between 0% and 100%." })
+    .min(0, "Start SoC must be between 0% and 100%.")
+    .max(100, "Start SoC must be between 0% and 100%.")
+    .default(20),
+  targetSoc: z.coerce
+    .number({ message: "Enter a target state of charge between 1% and 100%." })
+    .min(1, "Target SoC must be at least 1%.")
+    .max(100, "Target SoC cannot exceed 100%.")
+    .optional()
 });
 
 export const sessionCompleteSchema = z.object({
-  endSoc: z.coerce.number().min(0).max(100).optional(),
+  endSoc: z.coerce
+    .number({ message: "Enter the ending state of charge." })
+    .min(0, "End SoC must be between 0% and 100%.")
+    .max(100, "End SoC must be between 0% and 100%.")
+    .optional(),
   simulateConnectivityLoss: z.boolean().optional(),
   simulateChargerMalfunction: z.boolean().optional()
 });

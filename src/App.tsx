@@ -42,6 +42,7 @@ import type {
   Vehicle
 } from "./shared/domain";
 import { demoOrigin, haversineDistanceKm, type Coordinates } from "./shared/geo";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 import { SignInScreen } from "./features/account/SignInScreen";
 import { ChargeStep } from "./features/charging/ChargeStep";
 import { EvidenceStep } from "./features/evidence/EvidenceStep";
@@ -49,12 +50,14 @@ import { OpsStep } from "./features/operations/OpsStep";
 import { ReserveStep } from "./features/reservation/ReserveStep";
 import { VehicleStep } from "./features/vehicle/VehicleStep";
 import { WalletStep } from "./features/wallet/WalletStep";
-import { buildSlots, money, subtitleFor, titleFor } from "./lib/presentation";
+import { buildSlots, friendlyError, money, subtitleFor, titleFor } from "./lib/presentation";
 import { firstAvailableSlotIndex } from "./shared/reservationSlots";
 
 type ViewId = "vehicle" | "reserve" | "charge" | "wallet" | "ops" | "evidence";
 type StationDraft = Pick<ChargingStation, "name" | "address" | "operatingStart" | "operatingEnd" | "status">;
 type StationFormState = {
+  mode: "new" | "existing";
+  existingStationId: string;
   name: string;
   address: string;
   latitude: string;
@@ -131,6 +134,13 @@ export default function App() {
   const [data, setData] = useState<BootstrapPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "bad" | "info"; text: string } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    destructive?: boolean;
+    confirmLabel?: string;
+    onConfirm: () => void;
+  } | null>(null);
   const [filters, setFilters] = useState({ connector: "", power: "", maxPrice: "" });
   const [selectedStationId, setSelectedStationId] = useState("station-karsiyaka");
   const [selectedChargerId, setSelectedChargerId] = useState("charger-karsiyaka-ccs-03");
@@ -156,13 +166,15 @@ export default function App() {
   const [stationDrafts, setStationDrafts] = useState<Record<string, StationDraft>>({});
   const [selectedConfigStationId, setSelectedConfigStationId] = useState("station-karsiyaka");
   const [stationForm, setStationForm] = useState<StationFormState>({
+    mode: "new",
+    existingStationId: "",
     name: "Guzelyali Fast Charge",
     address: "Guzelyali, Izmir",
     latitude: "38.4030",
     longitude: "27.0950",
     operatingStart: "06:00",
     operatingEnd: "23:00",
-    chargerCode: "DC 50kW #05",
+    chargerCode: "",
     chargerType: "DC",
     connectorType: "CCS",
     powerKw: "50",
@@ -237,7 +249,7 @@ export default function App() {
         const stations = await api<ChargingStation[]>("/api/stations");
         if (cancelled) return;
         setData((current) => (current ? { ...current, stations } : current));
-        setLastRefresh(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        setLastRefresh(new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       } catch {
         // The main action flow surfaces request errors; polling stays quiet to avoid noisy UI.
       }
@@ -343,7 +355,7 @@ export default function App() {
     setLoading(true);
     try {
       setData(await api<BootstrapPayload>("/api/bootstrap"));
-      setLastRefresh(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+      setLastRefresh(new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
     } catch (error) {
       show("bad", error);
     } finally {
@@ -366,7 +378,7 @@ export default function App() {
   }
 
   function show(type: "bad" | "info", error: unknown) {
-    setNotice({ type, text: error instanceof Error ? error.message : String(error) });
+    setNotice({ type, text: friendlyError(error) });
   }
 
   function driverId() {
@@ -434,7 +446,7 @@ export default function App() {
             endTime: selectedSlot.end.toISOString()
           })
         }),
-      "Reservation confirmed. Route, notification, and audit log are ready.",
+      "Reservation confirmed. You're all set — see you at the charger!",
       "charge"
     );
   }
@@ -471,7 +483,7 @@ export default function App() {
             simulateChargerMalfunction: sessionForm.malfunction
           })
         }),
-      "Charging completed. Wallet charged, receipt created, and history updated.",
+      "Charging complete. Your receipt is in the wallet.",
       "wallet"
     );
   }
@@ -479,7 +491,7 @@ export default function App() {
   async function cancelReservation(reservation: Reservation) {
     await action(
       () => api<Reservation>(`/api/reservations/${reservation.id}/cancel`, { method: "POST" }),
-      "Reservation cancelled. Refund workflow checked and notification created."
+      "Reservation cancelled. Any held amount has been refunded to your wallet."
     );
   }
 
@@ -509,7 +521,7 @@ export default function App() {
     }
     await action(
       () => api("/api/wallet/top-up", { method: "POST", body: JSON.stringify({ userId: driverId(), amount: Number(topUpAmount) }) }),
-      "Wallet topped up and receipt generated."
+      "Wallet topped up — your new balance is ready."
     );
   }
 
@@ -539,10 +551,55 @@ export default function App() {
   }
 
   async function updateCharger(charger: Charger, status: ChargerStatus, pricePerKwh = charger.pricePerKwh) {
+    if (status === "OUT_OF_SERVICE" && charger.status !== "OUT_OF_SERVICE") {
+      setConfirmState({
+        title: "Take charger out of service?",
+        message: `${charger.code} will be marked Out of service. Any active reservations on this charger will be auto-cancelled and customers notified. Continue?`,
+        destructive: true,
+        confirmLabel: "Take out of service",
+        onConfirm: () => runChargerUpdate(charger, status, pricePerKwh)
+      });
+      return;
+    }
+    const priceChanged = Number.isFinite(pricePerKwh) && Math.abs(pricePerKwh - charger.pricePerKwh) > 0.001;
+    if (priceChanged && status === charger.status) {
+      const delta = pricePerKwh - charger.pricePerKwh;
+      const pct = charger.pricePerKwh > 0 ? (delta / charger.pricePerKwh) * 100 : 0;
+      const direction = delta > 0 ? "increase" : "decrease";
+      setConfirmState({
+        title: `Confirm price ${direction}?`,
+        message: `Set ${charger.code} price to ${money(pricePerKwh)} (was ${money(charger.pricePerKwh)}, ${delta > 0 ? "+" : ""}${pct.toFixed(1)}%). Customers will see the new price on future reservations.`,
+        destructive: delta > 0,
+        confirmLabel: "Save price",
+        onConfirm: () => runChargerUpdate(charger, status, pricePerKwh)
+      });
+      return;
+    }
+    await runChargerUpdate(charger, status, pricePerKwh);
+  }
+
+  async function runChargerUpdate(charger: Charger, status: ChargerStatus, pricePerKwh: number) {
+    const priceChanged = Number.isFinite(pricePerKwh) && Math.abs(pricePerKwh - charger.pricePerKwh) > 0.001;
+    const statusChanged = status !== charger.status;
+    let message = "No changes to save.";
+    if (priceChanged && statusChanged) {
+      message = `${charger.code}: status → ${status.replace("_", " ").toLowerCase()}, price ${money(charger.pricePerKwh)} → ${money(pricePerKwh)}.`;
+    } else if (priceChanged) {
+      const delta = pricePerKwh - charger.pricePerKwh;
+      const pct = charger.pricePerKwh > 0 ? (delta / charger.pricePerKwh) * 100 : 0;
+      message = `Price updated for ${charger.code}: ${money(charger.pricePerKwh)} → ${money(pricePerKwh)} (${delta > 0 ? "+" : ""}${pct.toFixed(1)}%).`;
+    } else if (statusChanged) {
+      message = `${charger.code} is now ${status.replace("_", " ").toLowerCase()}.`;
+    }
     await action(
       () => api(`/api/operator/chargers/${charger.id}/status`, { method: "PATCH", body: JSON.stringify({ status, pricePerKwh }) }),
-      "Charger status updated."
+      message
     );
+    setChargerPriceDrafts((drafts) => {
+      const next = { ...drafts };
+      delete next[charger.id];
+      return next;
+    });
   }
 
   async function updateStation(station: ChargingStation) {
@@ -572,35 +629,100 @@ export default function App() {
       for (let attempt = 0; attempt < 3; attempt += 1) {
         await api("/api/security/simulate-failed-login", { method: "POST", body: JSON.stringify({ email: "driver@group28.demo" }) });
       }
-    }, "Failed-login threshold reached; admin notification created.");
+    }, "Repeated failed sign-in detected — administrators have been alerted.");
   }
 
   async function addStation(event: FormEvent) {
     event.preventDefault();
+    if (stationForm.mode === "existing") {
+      if (!stationForm.existingStationId) {
+        setNotice({ type: "bad", text: "Please select a station to add the charger to." });
+        return;
+      }
+      const target = data?.stations.find((s) => s.id === stationForm.existingStationId);
+      await action(
+        () =>
+          api<Charger>(`/api/admin/stations/${stationForm.existingStationId}/chargers`, {
+            method: "POST",
+            body: JSON.stringify({
+              chargerCode: stationForm.chargerCode.trim() || undefined,
+              chargerType: stationForm.chargerType,
+              connectorType: stationForm.connectorType,
+              powerKw: Number(stationForm.powerKw),
+              pricePerKwh: Number(stationForm.pricePerKwh)
+            })
+          }),
+        `Charger added to ${target?.name ?? "the station"}.`
+      );
+      return;
+    }
     await action(
       () =>
         api<ChargingStation>("/api/admin/stations", {
           method: "POST",
           body: JSON.stringify({
-            ...stationForm,
+            name: stationForm.name,
+            address: stationForm.address,
+            operatingStart: stationForm.operatingStart,
+            operatingEnd: stationForm.operatingEnd,
+            chargerCode: stationForm.chargerCode.trim() || undefined,
+            chargerType: stationForm.chargerType,
+            connectorType: stationForm.connectorType,
             latitude: Number(stationForm.latitude),
             longitude: Number(stationForm.longitude),
             powerKw: Number(stationForm.powerKw),
             pricePerKwh: Number(stationForm.pricePerKwh)
           })
         }),
-      "Station and default charger added."
+      "Station and first charger added."
     );
   }
 
-  async function deleteStation(station: ChargingStation) {
-    await action(
-      () => api<ChargingStation>(`/api/admin/stations/${station.id}`, { method: "DELETE" }),
-      `${station.name} removed from the network.`
-    );
+  function deleteStation(station: ChargingStation) {
+    setConfirmState({
+      title: "Remove station?",
+      message: `"${station.name}" and all of its ${station.chargers.length} charger(s) will be permanently removed. Any upcoming reservations on this station will be cancelled. This cannot be undone.`,
+      destructive: true,
+      confirmLabel: "Remove station",
+      onConfirm: () =>
+        action(
+          () => api<ChargingStation>(`/api/admin/stations/${station.id}`, { method: "DELETE" }),
+          `${station.name} removed from the network.`
+        )
+    });
   }
 
   async function updateUser(userId: string, changes: { role?: UserRole; isActive?: boolean }) {
+    const target = data?.users.find((user) => user.id === userId);
+    const deactivating = changes.isActive === false;
+    const changingRole = !!changes.role && target && changes.role !== target.role;
+    if (deactivating && target) {
+      setConfirmState({
+        title: "Deactivate user?",
+        message: `${target.name} (${target.email}) will lose access until reactivated. Active sessions will not be terminated. Continue?`,
+        destructive: true,
+        confirmLabel: "Deactivate",
+        onConfirm: () =>
+          action(
+            () => api(`/api/admin/users/${userId}`, { method: "PATCH", body: JSON.stringify(changes) }),
+            `${target.name} has been deactivated.`
+          )
+      });
+      return;
+    }
+    if (changingRole && target) {
+      setConfirmState({
+        title: "Change user role?",
+        message: `${target.name}'s role will change from ${target.role.replace("_", " ").toLowerCase()} to ${changes.role!.replace("_", " ").toLowerCase()}. Continue?`,
+        confirmLabel: "Change role",
+        onConfirm: () =>
+          action(
+            () => api(`/api/admin/users/${userId}`, { method: "PATCH", body: JSON.stringify(changes) }),
+            `${target.name} is now a ${changes.role!.replace("_", " ").toLowerCase()}.`
+          )
+      });
+      return;
+    }
     await action(
       () => api(`/api/admin/users/${userId}`, { method: "PATCH", body: JSON.stringify(changes) }),
       "User account updated."
@@ -698,6 +820,19 @@ export default function App() {
             <button onClick={() => setNotice(null)}>Close</button>
           </div>
         )}
+        <ConfirmDialog
+          open={!!confirmState}
+          title={confirmState?.title ?? ""}
+          message={confirmState?.message ?? ""}
+          destructive={confirmState?.destructive}
+          confirmLabel={confirmState?.confirmLabel}
+          onConfirm={() => {
+            const next = confirmState;
+            setConfirmState(null);
+            next?.onConfirm();
+          }}
+          onCancel={() => setConfirmState(null)}
+        />
         {loading && <div className="thin-loader" />}
 
         {view === "vehicle" && (

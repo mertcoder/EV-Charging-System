@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChargingStation } from "./shared/domain";
 import type { Coordinates } from "./shared/geo";
-
-declare global {
-  interface Window {
-    google?: any;
-    __group28GoogleMapsLoading?: Promise<void>;
-  }
-}
+import { loadGoogleMaps } from "./lib/googleMaps";
 
 const statusColors: Record<string, string> = {
   Available: "#16a56b",
@@ -28,7 +22,9 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<any>(null);
   const markers = useRef<any[]>([]);
+  const directionsRenderer = useRef<any>(null);
   const [loadError, setLoadError] = useState("");
+  const [routeSummary, setRouteSummary] = useState<{ distance: string; duration: string } | null>(null);
 
   useEffect(() => {
     if (!apiKey || !mapRef.current) return;
@@ -46,7 +42,22 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
             mapTypeControl: false,
             fullscreenControl: false,
             streetViewControl: false,
-            clickableIcons: false
+            clickableIcons: false,
+            keyboardShortcuts: false,
+            gestureHandling: "greedy"
+          });
+        }
+
+        if (!directionsRenderer.current) {
+          directionsRenderer.current = new window.google.maps.DirectionsRenderer({
+            map: mapInstance.current,
+            suppressMarkers: true,
+            preserveViewport: true,
+            polylineOptions: {
+              strokeColor: "#1f6feb",
+              strokeOpacity: 0.85,
+              strokeWeight: 5
+            }
           });
         }
 
@@ -94,6 +105,38 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
     };
   }, [apiKey, stations, selectedStationId, origin.latitude, origin.longitude, locationMode, onSelect]);
 
+  useEffect(() => {
+    if (!apiKey) return;
+    const station = stations.find((s) => s.id === selectedStationId);
+    if (!station || !window.google?.maps || !directionsRenderer.current) return;
+    const service = new window.google.maps.DirectionsService();
+    let cancelled = false;
+    service.route(
+      {
+        origin: { lat: origin.latitude, lng: origin.longitude },
+        destination: { lat: station.latitude, lng: station.longitude },
+        travelMode: window.google.maps.TravelMode.DRIVING
+      },
+      (result: any, status: any) => {
+        if (cancelled) return;
+        if (status === "OK" && result) {
+          directionsRenderer.current.setDirections(result);
+          const leg = result.routes?.[0]?.legs?.[0];
+          if (leg?.distance?.text && leg?.duration?.text) {
+            setRouteSummary({ distance: leg.distance.text, duration: leg.duration.text });
+          } else {
+            setRouteSummary(null);
+          }
+        } else {
+          setRouteSummary(null);
+        }
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [apiKey, selectedStationId, origin.latitude, origin.longitude, stations]);
+
   if (!apiKey || loadError) {
     return <FallbackMap stations={stations} selectedStationId={selectedStationId} origin={origin} locationMode={locationMode} onSelect={onSelect} reason={loadError || "Google Maps API key is not configured yet."} />;
   }
@@ -102,6 +145,12 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
     <div className="real-map-shell">
       <div ref={mapRef} className="real-map" />
       <div className="map-note">Live Google Maps mode</div>
+      {routeSummary && (
+        <div className="map-route-summary" aria-live="polite">
+          <strong>{routeSummary.duration}</strong>
+          <span>{routeSummary.distance} by car</span>
+        </div>
+      )}
       <div className="map-legend" aria-label="Marker legend">
         <span className="legend-available">Available</span>
         <span className="legend-occupied">Occupied</span>
@@ -109,23 +158,6 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
       </div>
     </div>
   );
-}
-
-function loadGoogleMaps(apiKey: string) {
-  if (window.google?.maps) return Promise.resolve();
-  if (window.__group28GoogleMapsLoading) return window.__group28GoogleMapsLoading;
-
-  window.__group28GoogleMapsLoading = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Google Maps script could not be loaded. Check the API key and Maps JavaScript API access."));
-    document.head.appendChild(script);
-  });
-
-  return window.__group28GoogleMapsLoading;
 }
 
 function FallbackMap({ stations, selectedStationId, reason, locationMode, onSelect }: MapViewProps & { reason: string }) {

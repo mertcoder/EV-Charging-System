@@ -3,6 +3,16 @@ import { History, ReceiptText } from "lucide-react";
 import type { BootstrapPayload, ChargingSession } from "../shared/domain";
 import { money, statusLabel, transactionLabel } from "../lib/presentation";
 
+function sessionDateLabel(value?: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 export function Input({ label, value, onChange, type = "text", suffix }: { label: string; value: string; onChange: (value: string) => void; type?: string; suffix?: string }) {
   return (
     <label>
@@ -60,20 +70,45 @@ export function SessionHistory({ sessions }: { sessions: ChargingSession[] }) {
     <div className="hero-panel wide-panel">
       <PanelTitle icon={<History />} title="Charging history" />
       {sessions.length === 0 ? (
-        <Empty text="No completed sessions yet." />
+        <Empty text="You haven't completed any charging sessions yet." />
       ) : (
-        <div className="compact-table">
-          {sessions.map((session) => (
-            <div className="table-row" key={session.id}>
-              <div>
-                <strong>{session.reservation?.charger?.station?.name ?? "Charging session"}</strong>
-                <span>
-                  <span className="mono">{session.energyKwh} kWh</span> - <span className="mono">{money(session.totalCost)}</span> - {session.receiptNumber ?? "no receipt"}
-                </span>
-              </div>
-              <span className={`status-pill status-${session.status.toLowerCase()}`}>{statusLabel(session.status)}</span>
-            </div>
-          ))}
+        <div className="session-grid">
+          {sessions.map((session) => {
+            const statusKey = session.status.toLowerCase();
+            const stationName = session.reservation?.charger?.station?.name ?? "Charging session";
+            const chargerCode = session.reservation?.charger?.code;
+            return (
+              <article className={`session-card status-${statusKey}`} key={session.id}>
+                <header className="session-card-header">
+                  <div className="session-station">
+                    <strong>{stationName}</strong>
+                    <span>
+                      {chargerCode ? `${chargerCode} · ` : ""}{sessionDateLabel(session.startTime)}
+                    </span>
+                  </div>
+                  <span className={`status-pill status-${statusKey}`}>{statusLabel(session.status)}</span>
+                </header>
+                <div className="session-stats">
+                  <div className="session-stat">
+                    <small>Energy</small>
+                    <strong>{session.energyKwh.toFixed(1)} kWh</strong>
+                  </div>
+                  <div className="session-stat">
+                    <small>Total</small>
+                    <strong>{money(session.totalCost)}</strong>
+                  </div>
+                  <div className="session-stat">
+                    <small>{session.endSoc != null ? "Charged to" : "Started at"}</small>
+                    <strong>{session.endSoc != null ? `${session.endSoc}%` : `${session.startSoc}%`}</strong>
+                  </div>
+                </div>
+                <div className="session-receipt">
+                  <span>Receipt</span>
+                  <code>{session.receiptNumber ?? "Not generated"}</code>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

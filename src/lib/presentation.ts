@@ -56,6 +56,32 @@ export function money(value: number) {
   return `${Number(value).toFixed(2)} TL`;
 }
 
+const zodPhraseReplacements: Array<[RegExp, string]> = [
+  [/String must contain at least 1 character\(s\)/gi, "This field is required."],
+  [/String must contain at least (\d+) character\(s\)/gi, "Please enter at least $1 characters."],
+  [/Number must be greater than or equal to 0/gi, "Value cannot be negative."],
+  [/Number must be greater than or equal to 1/gi, "Value must be at least 1."],
+  [/Number must be greater than or equal to (\d+(?:\.\d+)?)/gi, "Value must be at least $1."],
+  [/Number must be less than or equal to (\d+(?:\.\d+)?)/gi, "Value cannot exceed $1."],
+  [/Expected (string|number|boolean|date), received (null|undefined|nan)/gi, "Please fill in this field."],
+  [/Required/g, "This field is required."],
+  [/Invalid input/gi, "Please review your input and try again."],
+  [/Invalid date/gi, "Please choose a valid date."],
+  [/Invalid enum value\..*$/gi, "Please choose one of the available options."]
+];
+
+export function friendlyError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error ?? "");
+  if (!raw) return "Something went wrong. Please review the form and try again.";
+  let text = raw;
+  for (const [pattern, replacement] of zodPhraseReplacements) {
+    text = text.replace(pattern, replacement);
+  }
+  text = text.replace(/\s+/g, " ").trim();
+  if (!text) return "Something went wrong. Please review the form and try again.";
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export function googleMapsDirectionsUrl(station: ChargingStation, origin: Coordinates) {
   const originPoint = encodeURIComponent(`${origin.latitude},${origin.longitude}`);
   const destination = encodeURIComponent(`${station.latitude},${station.longitude}`);
@@ -63,7 +89,7 @@ export function googleMapsDirectionsUrl(station: ChargingStation, origin: Coordi
 }
 
 export function timeShort(value: string) {
-  return new Date(value).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" });
+  return new Date(value).toLocaleString("en-US", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 export interface Slot {

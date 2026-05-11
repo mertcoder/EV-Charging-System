@@ -4,6 +4,9 @@ import type { BootstrapPayload, Charger, ChargerStatus, ChargingStation, IssueRe
 import type { ReportsPayload, StationDraft, StationFormState } from "../../appTypes";
 import { Empty, Input, Metric, PanelTitle, SimpleRow } from "../../components/common";
 import { money, timeShort } from "../../lib/presentation";
+import { LocationPicker } from "./LocationPicker";
+
+const mapApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
 
 export function OpsStep(props: {
   role: UserRole;
@@ -54,32 +57,64 @@ export function OpsStep(props: {
         <PanelTitle icon={<Wrench />} title="Chargers" />
         <div className="compact-table">
           {props.data.stations.flatMap((station) =>
-            station.chargers.map((charger) => (
-              <div className="table-row" key={charger.id}>
-                <div>
-                  <strong className="mono">{charger.code}</strong>
-                  <span>{station.name} - {charger.connectorType} - <span className="mono">{money(charger.pricePerKwh)}</span></span>
+            station.chargers.map((charger) => {
+              const draftStr = props.chargerPriceDrafts[charger.id];
+              const draftNum = Number(draftStr);
+              const hasDraft = draftStr !== undefined && draftStr !== "" && !Number.isNaN(draftNum) && draftNum !== charger.pricePerKwh;
+              const delta = hasDraft ? draftNum - charger.pricePerKwh : 0;
+              const pct = hasDraft && charger.pricePerKwh > 0 ? (delta / charger.pricePerKwh) * 100 : 0;
+              const direction = delta > 0 ? "up" : "down";
+              return (
+                <div className="charger-row" key={charger.id}>
+                  <div className="charger-row-header">
+                    <div>
+                      <strong className="mono">{charger.code}</strong>
+                      <span>{station.name} - {charger.connectorType} - <span className="mono">{money(charger.pricePerKwh)}</span></span>
+                    </div>
+                  </div>
+                  <div className="charger-row-controls">
+                    <div className="price-edit-field">
+                      <label>
+                        <span>New price per kWh</span>
+                        <div className="input-with-suffix wide-price">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.1"
+                            value={props.chargerPriceDrafts[charger.id] ?? String(charger.pricePerKwh)}
+                            onChange={(event) => props.setChargerPriceDrafts({ ...props.chargerPriceDrafts, [charger.id]: event.target.value })}
+                          />
+                          <em>TL</em>
+                        </div>
+                      </label>
+                    </div>
+                    <label className="status-edit-field">
+                      <span>Status</span>
+                      <select value={charger.status} onChange={(event) => props.onUpdateCharger(charger, event.target.value as ChargerStatus, Number(props.chargerPriceDrafts[charger.id] ?? charger.pricePerKwh))}>
+                        <option value="AVAILABLE">Available</option>
+                        <option value="IN_USE">In use</option>
+                        <option value="RESERVED">Reserved</option>
+                        <option value="OUT_OF_SERVICE">Out of service</option>
+                      </select>
+                    </label>
+                    <button className="secondary save-price-btn" type="button" onClick={() => props.onUpdateCharger(charger, charger.status, Number(props.chargerPriceDrafts[charger.id] ?? charger.pricePerKwh))}>
+                      Save price
+                    </button>
+                  </div>
+                  {hasDraft && (
+                    <div className={`price-diff price-diff-${direction}`} aria-live="polite">
+                      <span className="mono">{money(charger.pricePerKwh)}</span>
+                      <span aria-hidden>→</span>
+                      <strong className="mono">{money(draftNum)}</strong>
+                      <em className="mono">
+                        {delta > 0 ? "+" : ""}{money(delta)} ({pct > 0 ? "+" : ""}{pct.toFixed(1)}%)
+                      </em>
+                    </div>
+                  )}
                 </div>
-                <div className="row-actions">
-                  <Input
-                    label="Price"
-                    type="number"
-                    suffix="TL"
-                    value={props.chargerPriceDrafts[charger.id] ?? String(charger.pricePerKwh)}
-                    onChange={(value) => props.setChargerPriceDrafts({ ...props.chargerPriceDrafts, [charger.id]: value })}
-                  />
-                  <select value={charger.status} onChange={(event) => props.onUpdateCharger(charger, event.target.value as ChargerStatus, Number(props.chargerPriceDrafts[charger.id] ?? charger.pricePerKwh))}>
-                    <option value="AVAILABLE">Available</option>
-                    <option value="IN_USE">In use</option>
-                    <option value="RESERVED">Reserved</option>
-                    <option value="OUT_OF_SERVICE">Out of service</option>
-                  </select>
-                  <button className="secondary" type="button" onClick={() => props.onUpdateCharger(charger, charger.status, Number(props.chargerPriceDrafts[charger.id] ?? charger.pricePerKwh))}>
-                    Save price
-                  </button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -120,8 +155,8 @@ export function OpsStep(props: {
             <Input label="Station name" value={selectedDraft.name} onChange={(value) => props.setStationDrafts({ ...props.stationDrafts, [selectedConfigStation.id]: { ...selectedDraft, name: value } })} />
             <Input label="Address" value={selectedDraft.address} onChange={(value) => props.setStationDrafts({ ...props.stationDrafts, [selectedConfigStation.id]: { ...selectedDraft, address: value } })} />
             <div className="inline-fields">
-              <Input label="Opens" value={selectedDraft.operatingStart} onChange={(value) => props.setStationDrafts({ ...props.stationDrafts, [selectedConfigStation.id]: { ...selectedDraft, operatingStart: value } })} />
-              <Input label="Closes" value={selectedDraft.operatingEnd} onChange={(value) => props.setStationDrafts({ ...props.stationDrafts, [selectedConfigStation.id]: { ...selectedDraft, operatingEnd: value } })} />
+              <Input label="Opens" type="time" value={selectedDraft.operatingStart} onChange={(value) => props.setStationDrafts({ ...props.stationDrafts, [selectedConfigStation.id]: { ...selectedDraft, operatingStart: value } })} />
+              <Input label="Closes" type="time" value={selectedDraft.operatingEnd} onChange={(value) => props.setStationDrafts({ ...props.stationDrafts, [selectedConfigStation.id]: { ...selectedDraft, operatingEnd: value } })} />
             </div>
             <label>
               Station status
@@ -171,23 +206,82 @@ export function OpsStep(props: {
         <>
           <div className="hero-panel wide-panel">
             <PanelTitle icon={<Plus />} title="Admin station management" />
+            <div className="station-mode-toggle" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={props.stationForm.mode === "new"}
+                className={props.stationForm.mode === "new" ? "active" : ""}
+                onClick={() => props.setStationForm({ ...props.stationForm, mode: "new" })}
+              >
+                New station + first charger
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={props.stationForm.mode === "existing"}
+                className={props.stationForm.mode === "existing" ? "active" : ""}
+                onClick={() => props.setStationForm({ ...props.stationForm, mode: "existing" })}
+              >
+                Add charger to existing station
+              </button>
+            </div>
             <form className="clean-form" onSubmit={props.onAddStation}>
+              {props.stationForm.mode === "new" ? (
+                <>
+                  <div className="inline-fields">
+                    <Input label="Station name" value={props.stationForm.name} onChange={(value) => props.setStationForm({ ...props.stationForm, name: value })} />
+                    <Input label="Address" value={props.stationForm.address} onChange={(value) => props.setStationForm({ ...props.stationForm, address: value })} />
+                  </div>
+                  <label>
+                    <span>Location</span>
+                    <LocationPicker
+                      apiKey={mapApiKey}
+                      value={
+                        props.stationForm.latitude && props.stationForm.longitude
+                          ? { lat: Number(props.stationForm.latitude), lng: Number(props.stationForm.longitude) }
+                          : null
+                      }
+                      onChange={({ lat, lng }) =>
+                        props.setStationForm({
+                          ...props.stationForm,
+                          latitude: lat.toFixed(6),
+                          longitude: lng.toFixed(6)
+                        })
+                      }
+                    />
+                    <small className="soft-note">
+                      {props.stationForm.latitude && props.stationForm.longitude
+                        ? `Selected location: ${Number(props.stationForm.latitude).toFixed(4)}, ${Number(props.stationForm.longitude).toFixed(4)}`
+                        : "Click on the map to place the station."}
+                    </small>
+                  </label>
+                  <div className="inline-fields">
+                    <Input label="Opens" type="time" value={props.stationForm.operatingStart} onChange={(value) => props.setStationForm({ ...props.stationForm, operatingStart: value })} />
+                    <Input label="Closes" type="time" value={props.stationForm.operatingEnd} onChange={(value) => props.setStationForm({ ...props.stationForm, operatingEnd: value })} />
+                  </div>
+                </>
+              ) : (
+                <label>
+                  <span>Station</span>
+                  <select
+                    value={props.stationForm.existingStationId}
+                    onChange={(event) => props.setStationForm({ ...props.stationForm, existingStationId: event.target.value })}
+                  >
+                    <option value="">Select a station</option>
+                    {props.data.stations.map((station) => (
+                      <option key={station.id} value={station.id}>
+                        {station.name} ({station.chargers.length} chargers)
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <div className="inline-fields">
-                <Input label="Station name" value={props.stationForm.name} onChange={(value) => props.setStationForm({ ...props.stationForm, name: value })} />
-                <Input label="Address" value={props.stationForm.address} onChange={(value) => props.setStationForm({ ...props.stationForm, address: value })} />
-              </div>
-              <div className="inline-fields">
-                <Input label="Latitude" value={props.stationForm.latitude} onChange={(value) => props.setStationForm({ ...props.stationForm, latitude: value })} />
-                <Input label="Longitude" value={props.stationForm.longitude} onChange={(value) => props.setStationForm({ ...props.stationForm, longitude: value })} />
-              </div>
-              <div className="inline-fields">
-                <Input label="Opens" value={props.stationForm.operatingStart} onChange={(value) => props.setStationForm({ ...props.stationForm, operatingStart: value })} />
-                <Input label="Closes" value={props.stationForm.operatingEnd} onChange={(value) => props.setStationForm({ ...props.stationForm, operatingEnd: value })} />
-              </div>
-              <div className="inline-fields">
-                <Input label="Charger code" value={props.stationForm.chargerCode} onChange={(value) => props.setStationForm({ ...props.stationForm, chargerCode: value })} />
+                <Input label="Charger code (optional)" value={props.stationForm.chargerCode} onChange={(value) => props.setStationForm({ ...props.stationForm, chargerCode: value })} />
                 <Input label="Power" suffix="kW" type="number" value={props.stationForm.powerKw} onChange={(value) => props.setStationForm({ ...props.stationForm, powerKw: value })} />
               </div>
+              <small className="soft-note">Leave the charger code blank to auto-generate one (e.g. &quot;DC 50kW #02&quot;).</small>
               <div className="inline-fields">
                 <label>
                   Charger type
@@ -207,7 +301,7 @@ export function OpsStep(props: {
               </div>
               <Input label="Price per kWh" suffix="TL" type="number" value={props.stationForm.pricePerKwh} onChange={(value) => props.setStationForm({ ...props.stationForm, pricePerKwh: value })} />
               <button className="primary wide" type="submit">
-                <Plus /> Add station and charger
+                <Plus /> {props.stationForm.mode === "new" ? "Add station and first charger" : "Add charger to station"}
               </button>
             </form>
             <div className="compact-table spacious">
@@ -215,7 +309,7 @@ export function OpsStep(props: {
                 <div className="table-row" key={station.id}>
                   <div>
                     <strong>{station.name}</strong>
-                    <span>{station.chargers.length} chargers - {station.status}</span>
+                    <span>{station.chargers.length} {station.chargers.length === 1 ? "charger" : "chargers"} - {station.status}</span>
                   </div>
                   <button className="secondary" type="button" onClick={() => props.onDeleteStation(station)}>
                     <Trash2 /> Remove

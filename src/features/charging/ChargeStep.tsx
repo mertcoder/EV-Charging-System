@@ -1,8 +1,28 @@
 import type { FormEvent } from "react";
-import { Activity, AlertTriangle, Clock, Gauge, RefreshCw, Zap } from "lucide-react";
+import { Activity, AlertTriangle, BatteryCharging, CalendarClock, Gauge, MapPin, PlugZap, RefreshCw, Zap } from "lucide-react";
 import type { ChargingSession, Reservation } from "../../shared/domain";
 import { Empty, Metric, PanelTitle, SessionHistory, Slider } from "../../components/common";
 import { money, timeShort } from "../../lib/presentation";
+
+function reservationStatusLabel(status: string) {
+  return ({
+    CONFIRMED: "Confirmed",
+    PENDING: "Pending",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+    NO_SHOW: "Missed",
+    EXPIRED: "Expired"
+  } as Record<string, string>)[status] ?? status.replace("_", " ").toLowerCase();
+}
+
+function reservationDateParts(value: string) {
+  const date = new Date(value);
+  return {
+    day: date.toLocaleDateString("en-US", { weekday: "short" }),
+    monthDay: date.toLocaleDateString("en-US", { day: "2-digit", month: "short" }),
+    time: date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+  };
+}
 
 export function ChargeStep(props: {
   reservations: Reservation[];
@@ -105,28 +125,68 @@ export function ChargeStep(props: {
         </form>
       </div>
       <div className="hero-panel wide-panel">
-        <PanelTitle icon={<Clock />} title="Reservation management" />
+        <PanelTitle icon={<CalendarClock />} title="My reservations" />
         {props.reservations.length === 0 ? (
-          <Empty text="No reservations yet." />
+          <Empty text="You don't have any reservations yet." />
         ) : (
-          <div className="compact-table">
-            {props.reservations.map((reservation) => (
-              <div className="table-row" key={reservation.id}>
-                <div>
-                  <strong>{reservation.charger?.station?.name ?? "Station"} - {reservation.charger?.code ?? "Charger"}</strong>
-                  <span className="mono">{timeShort(reservation.startTime)} - {reservation.status} - estimate {money(reservation.estimatedCost)}</span>
-                </div>
-                <div className="row-actions">
-                  {reservation.status === "CONFIRMED" && (
-                    <>
-                      <button className="secondary" type="button" onClick={() => props.onCancel(reservation)}>Cancel</button>
-                      <button className="secondary" type="button" onClick={() => props.onNoShow(reservation)}>No-show</button>
-                    </>
-                  )}
-                  <span className={`status-pill status-${reservation.status.toLowerCase().replace("_", "-")}`}>{reservation.status}</span>
-                </div>
-              </div>
-            ))}
+          <div className="reservation-grid">
+            {props.reservations.map((reservation) => {
+              const when = reservationDateParts(reservation.startTime);
+              const statusKey = reservation.status.toLowerCase().replace("_", "-");
+              return (
+                <article className={`reservation-card status-${statusKey}`} key={reservation.id}>
+                  <header className="reservation-card-header">
+                    <div className="reservation-when">
+                      <span className="reservation-day">{when.day}</span>
+                      <strong className="reservation-date">{when.monthDay}</strong>
+                      <span className="reservation-time">{when.time}</span>
+                    </div>
+                    <span className={`status-pill status-${statusKey}`}>{reservationStatusLabel(reservation.status)}</span>
+                  </header>
+                  <div className="reservation-body">
+                    <div className="reservation-line">
+                      <MapPin />
+                      <div>
+                        <strong>{reservation.charger?.station?.name ?? "Charging station"}</strong>
+                        <span>{reservation.charger?.station?.address ?? "Address unavailable"}</span>
+                      </div>
+                    </div>
+                    <div className="reservation-line">
+                      <PlugZap />
+                      <div>
+                        <strong>{reservation.charger?.code ?? "Charger"}</strong>
+                        <span>
+                          {reservation.charger?.connectorType ?? "—"} · {reservation.charger?.powerKw ?? "—"} kW
+                        </span>
+                      </div>
+                    </div>
+                    {reservation.vehicle && (
+                      <div className="reservation-line">
+                        <BatteryCharging />
+                        <div>
+                          <strong>{reservation.vehicle.brand} {reservation.vehicle.modelName}</strong>
+                          <span className="mono">{reservation.vehicle.plateNumber}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <footer className="reservation-footer">
+                    <div className="reservation-cost">
+                      <small>Estimated cost</small>
+                      <strong>{money(reservation.estimatedCost)}</strong>
+                    </div>
+                    {reservation.status === "CONFIRMED" ? (
+                      <div className="reservation-actions">
+                        <button className="secondary" type="button" onClick={() => props.onCancel(reservation)}>Cancel</button>
+                        <button className="secondary subtle" type="button" onClick={() => props.onNoShow(reservation)}>Mark no-show</button>
+                      </div>
+                    ) : (
+                      <span className="reservation-meta">{timeShort(reservation.startTime)}</span>
+                    )}
+                  </footer>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>
