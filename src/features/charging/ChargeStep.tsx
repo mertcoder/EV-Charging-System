@@ -15,6 +15,14 @@ function reservationStatusLabel(status: string) {
   } as Record<string, string>)[status] ?? status.replace("_", " ").toLowerCase();
 }
 
+function syncStatusLabel(status: string) {
+  return ({
+    SYNCED: "Synced",
+    CACHED_THEN_SYNCED_WITHIN_30_SECONDS: "Cached - synced within 30s",
+    SERVER_PROJECTED_AUTO_STOP: "Auto-stopped (server projected)"
+  } as Record<string, string>)[status] ?? status.replace(/_/g, " ").toLowerCase();
+}
+
 function reservationDateParts(value: string) {
   const date = new Date(value);
   return {
@@ -96,7 +104,7 @@ export function ChargeStep(props: {
             <div className="mini-metrics compact">
               <Metric label="Energy" value={<span className="mono">{liveEnergy.toFixed(1)} kWh</span>} />
               <Metric label="Running cost" value={<span className="mono">{money(liveCost)}</span>} />
-              <Metric label="Sync" value={props.activeSession.syncStatus} />
+              <Metric label="Sync" value={syncStatusLabel(props.activeSession.syncStatus)} />
             </div>
             {props.walletBalance < liveCost && (
               <div className="compat-card bad">

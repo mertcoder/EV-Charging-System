@@ -47,6 +47,7 @@ import type {
 import { demoOrigin, haversineDistanceKm, type Coordinates } from "./shared/geo";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { SignInScreen } from "./features/account/SignInScreen";
+import { ChatBot } from "./features/chatbot/ChatBot";
 import { ChargeStep } from "./features/charging/ChargeStep";
 import { EvidenceStep } from "./features/evidence/EvidenceStep";
 import { HelpStep } from "./features/help/HelpStep";
@@ -227,7 +228,9 @@ export default function App() {
   }, [data, filters]);
 
   const estimatedCost = selectedCharger && selectedSlot ? selectedCharger.powerKw * selectedCharger.pricePerKwh * selectedSlot.durationHours : 0;
-  const visibleViewItems = viewItems.filter((item) => roleViews[role].includes(item.id));
+  const visibleViewItems = viewItems
+    .filter((item) => roleViews[role].includes(item.id))
+    .map((item) => (item.id === "help" && role === "EV_DRIVER" ? { ...item, label: "Guide & Help" } : item));
   const routeOrigin = userLocation ?? demoOrigin;
   const distanceByStationId = useMemo(() => {
     const stations = data?.stations ?? [];
@@ -427,6 +430,42 @@ export default function App() {
   function signOut() {
     setSignedOut(true);
     setNotice(null);
+  }
+
+  async function signInWithCredentials(email: string, password: string) {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.errors?.join(" ") ?? payload.error ?? "Sign in failed.");
+    }
+    const nextUser = payload.user as User;
+    setRole(nextUser.role);
+    setActiveUserId(nextUser.id);
+    setSignedOut(false);
+    setView(roleViews[nextUser.role][0]);
+    resetDriverSelections();
+  }
+
+  async function registerAccount(payload: { name: string; email: string; password: string; role: UserRole }) {
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      throw new Error(body.errors?.join(" ") ?? body.error ?? "Account creation failed.");
+    }
+    const nextUser = body.user as User;
+    setRole(nextUser.role);
+    setActiveUserId(nextUser.id);
+    setSignedOut(false);
+    setView(roleViews[nextUser.role][0]);
+    resetDriverSelections();
   }
 
   async function submitVehicle(event: FormEvent) {
@@ -754,7 +793,16 @@ export default function App() {
   }
 
   if (signedOut) {
-    return <SignInScreen users={data.users} onSignIn={switchUser} />;
+    return (
+      <SignInScreen
+        users={data.users}
+        onSignIn={switchUser}
+        onLogin={signInWithCredentials}
+        onRegister={registerAccount}
+        theme={theme}
+        onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
+      />
+    );
   }
 
   return (
@@ -796,8 +844,8 @@ export default function App() {
       <main className="workspace">
         <header className="topbar">
           <div className="topbar-side topbar-left">
-            <p className="eyebrow">{subtitleFor(view)}</p>
-            <h1>{titleFor(view)}</h1>
+            <p className="eyebrow">{subtitleFor(view, role)}</p>
+            <h1>{titleFor(view, role)}</h1>
           </div>
           <div className="role-switch-center" aria-label="Switch role">
             <div className="role-switch" role="tablist">
@@ -971,6 +1019,7 @@ export default function App() {
         {view === "help" && <HelpStep role={role} />}
         </div>
       </main>
+      <ChatBot role={role} onNavigate={setView} />
     </div>
   );
 }

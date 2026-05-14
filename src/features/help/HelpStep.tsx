@@ -10,7 +10,11 @@ import {
   FileText,
   Gauge,
   KeyRound,
+  LifeBuoy,
+  Mail,
   MapPinned,
+  MessageSquare,
+  Phone,
   PlugZap,
   RefreshCw,
   ShieldCheck,
@@ -167,6 +171,54 @@ function DriverHelp() {
       <div className="hero-panel wide-panel">
         <h3 className="help-panel-title">Frequently asked questions</h3>
         <FaqList items={faqs} />
+      </div>
+
+      <div className="hero-panel wide-panel">
+        <h3 className="help-panel-title">Get in touch</h3>
+        <p className="help-contact-lede">
+          Stuck at a station, payment issue, or just need a human? Reach out — these are placeholder demo
+          channels for the prototype.
+        </p>
+        <div className="help-contact-grid">
+          <article className="help-contact-card">
+            <div className="help-contact-icon"><Phone /></div>
+            <div>
+              <strong>24/7 driver hotline</strong>
+              <a href="tel:+908500002828">+90 850 000 28 28</a>
+              <small>Live agents, every day. Average pickup under 60 seconds.</small>
+            </div>
+          </article>
+          <article className="help-contact-card">
+            <div className="help-contact-icon"><Mail /></div>
+            <div>
+              <strong>Support email</strong>
+              <a href="mailto:support@voltline.demo">support@voltline.demo</a>
+              <small>Receipts, refunds, account questions. Reply within 4 hours.</small>
+            </div>
+          </article>
+          <article className="help-contact-card">
+            <div className="help-contact-icon"><MessageSquare /></div>
+            <div>
+              <strong>In-app chat</strong>
+              <button
+                type="button"
+                className="help-contact-link"
+                onClick={() => window.dispatchEvent(new CustomEvent("voltline:open-chat"))}
+              >
+                Open the chat widget
+              </button>
+              <small>Monday–Sunday, 07:00–23:00. Faster than email for quick fixes.</small>
+            </div>
+          </article>
+          <article className="help-contact-card help-contact-card-urgent">
+            <div className="help-contact-icon"><LifeBuoy /></div>
+            <div>
+              <strong>Roadside assistance</strong>
+              <a href="tel:+905550112828">+90 555 011 28 28</a>
+              <small>Stranded with a flat charge or stuck plug? Priority dispatch.</small>
+            </div>
+          </article>
+        </div>
       </div>
     </div>
   );

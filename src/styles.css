@@ -2542,13 +2542,20 @@ select option {
   place-items: center;
   padding: 28px;
   background: var(--bg);
+  position: relative;
+}
+
+.login-theme-toggle {
+  position: absolute;
+  top: 22px;
+  right: 22px;
 }
 
 .login-panel {
-  width: min(760px, 100%);
+  width: min(560px, 100%);
   display: grid;
   gap: 18px;
-  padding: 28px;
+  padding: 32px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-1);
@@ -2560,6 +2567,12 @@ select option {
   padding-bottom: 0;
 }
 
+.login-heading {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+}
+
 .login-panel h1 {
   margin: 0;
 }
@@ -2568,6 +2581,159 @@ select option {
   max-width: 620px;
   color: var(--text-muted);
   line-height: 1.55;
+  margin: 0;
+}
+
+.login-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+}
+
+.login-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.login-tabs button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.login-tabs button:hover {
+  color: var(--text);
+}
+
+.login-tabs button.active {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: var(--shadow-xs);
+}
+
+.login-form {
+  margin-top: 4px;
+}
+
+.login-form .primary {
+  margin-top: 6px;
+}
+
+.login-foot {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.link-button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--primary-ink);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-button:hover {
+  color: var(--gold);
+}
+
+.login-error {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  font-size: 0.86rem;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.password-toggle:hover {
+  background: var(--primary-soft);
+  color: var(--text);
+}
+
+.password-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.password-rules {
+  list-style: none;
+  margin: -4px 0 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.password-rules li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.password-rules svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.4;
+  flex-shrink: 0;
+}
+
+.password-rules li.passed {
+  color: var(--text);
+}
+
+.password-rules li.passed svg {
+  color: #4F8A4C;
+}
+
+.password-rules li.pending svg {
+  color: var(--text-faint);
 }
 
 .account-card-grid {
@@ -3446,6 +3612,405 @@ select option {
 .help-step p em {
   color: var(--gold-ink);
   font-style: italic;
+}
+
+.help-contact-lede {
+  margin: -8px 0 18px;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  max-width: 60ch;
+}
+
+.help-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.help-contact-card {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-1);
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.help-contact-card:hover {
+  border-color: var(--border-bold);
+  background: var(--surface-3);
+}
+
+.help-contact-card > div {
+  display: grid;
+  gap: 4px;
+}
+
+.help-contact-card strong {
+  color: var(--text-strong);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.help-contact-card a {
+  color: var(--primary-ink);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+
+.help-contact-card a:hover {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.help-contact-link {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--primary-ink);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
+
+.help-contact-link:hover {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.help-contact-card small {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.help-contact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  border: 1px solid rgba(184, 137, 59, 0.20);
+}
+
+.help-contact-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.help-contact-card-urgent .help-contact-icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: rgba(178, 58, 46, 0.25);
+}
+
+@media (max-width: 640px) {
+  .help-contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chatbot-launcher {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--primary);
+  color: var(--bg-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition), background var(--transition), box-shadow var(--transition);
+  z-index: 90;
+}
+
+.chatbot-launcher:hover {
+  transform: translateY(-1px);
+  background: var(--primary-strong);
+}
+
+.chatbot-launcher.open {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-bold);
+}
+
+.chatbot-launcher svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+[data-theme="dark"] .chatbot-launcher {
+  background: var(--gold);
+  color: var(--bg);
+  border-color: var(--gold);
+}
+
+[data-theme="dark"] .chatbot-launcher:hover {
+  background: var(--gold-hover);
+  border-color: var(--gold-hover);
+}
+
+.chatbot-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 82px;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(540px, calc(100vh - 120px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-1);
+  box-shadow: var(--shadow-lg, var(--shadow-md));
+  overflow: hidden;
+  z-index: 90;
+}
+
+.chatbot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.chatbot-header-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chatbot-header-id strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.chatbot-header-id small {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.chatbot-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  border: 1px solid rgba(184, 137, 59, 0.20);
+}
+
+.chatbot-avatar svg {
+  width: 17px;
+  height: 17px;
+}
+
+.chatbot-close {
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.chatbot-close:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.chatbot-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.chatbot-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-1);
+}
+
+.chatbot-message {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 85%;
+}
+
+.chatbot-message-bot {
+  align-self: flex-start;
+}
+
+.chatbot-message-user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chatbot-bubble {
+  padding: 9px 12px;
+  border-radius: 13px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.chatbot-message-user .chatbot-bubble {
+  background: var(--primary);
+  color: var(--bg-soft);
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .chatbot-message-user .chatbot-bubble {
+  background: var(--gold);
+  color: var(--bg);
+  border-color: var(--gold);
+}
+
+.chatbot-cta {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-bold);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.chatbot-cta:hover {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+  color: var(--gold-ink);
+}
+
+.chatbot-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 10px;
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+}
+
+.chatbot-suggestion {
+  font-size: 0.76rem;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.chatbot-suggestion:hover {
+  background: var(--primary-soft);
+  color: var(--text);
+}
+
+.chatbot-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.chatbot-input input {
+  flex: 1;
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  padding: 0 14px;
+  font-size: 0.88rem;
+  background: var(--surface-2);
+}
+
+.chatbot-input input:focus {
+  border-color: var(--primary);
+  background: var(--bg);
+}
+
+.chatbot-send {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--primary);
+  color: var(--bg-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition), opacity var(--transition);
+}
+
+.chatbot-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.chatbot-send svg {
+  width: 16px;
+  height: 16px;
+}
+
+[data-theme="dark"] .chatbot-send {
+  background: var(--gold);
+  color: var(--bg);
+}
+
+@media (max-width: 480px) {
+  .chatbot-panel {
+    right: 12px;
+    left: 12px;
+    width: auto;
+    bottom: 78px;
+  }
+  .chatbot-launcher {
+    right: 14px;
+    bottom: 14px;
+  }
 }
 
 .faq-list {

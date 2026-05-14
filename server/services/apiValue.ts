@@ -11,6 +11,8 @@ const moneyFields: Record<string, string> = {
   totalCostCents: "totalCost"
 };
 
+const sensitiveFields = new Set<string>(["passwordHash"]);
+
 export function toApiValue(value: unknown): unknown {
   if (value instanceof Date) return value.toISOString();
   if (Array.isArray(value)) return value.map(toApiValue);
@@ -18,6 +20,7 @@ export function toApiValue(value: unknown): unknown {
 
   const output: Record<string, unknown> = {};
   for (const [key, item] of Object.entries(value)) {
+    if (sensitiveFields.has(key)) continue;
     const mappedKey = moneyFields[key];
     if (mappedKey) {
       output[mappedKey] = typeof item === "number" ? fromCents(item) : item;

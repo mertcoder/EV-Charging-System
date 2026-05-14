@@ -1,9 +1,10 @@
-import type { Charger, ChargingStation } from "../shared/domain";
+import type { Charger, ChargingStation, UserRole } from "../shared/domain";
 import type { Coordinates } from "../shared/geo";
 import { isReservedSlot } from "../shared/reservationSlots";
 import type { ViewId } from "../appTypes";
 
-export function titleFor(view: ViewId) {
+export function titleFor(view: ViewId, role?: UserRole) {
+  if (view === "help" && role === "EV_DRIVER") return "Guide & help";
   return {
     vehicle: "My EV",
     reserve: "Find a charging station",
@@ -15,7 +16,8 @@ export function titleFor(view: ViewId) {
   }[view];
 }
 
-export function subtitleFor(view: ViewId) {
+export function subtitleFor(view: ViewId, role?: UserRole) {
+  if (view === "help" && role === "EV_DRIVER") return "How-to walkthrough, FAQ, and how to reach support";
   return {
     vehicle: "Manage your registered electric vehicles",
     reserve: "View and reserve nearby available stations",

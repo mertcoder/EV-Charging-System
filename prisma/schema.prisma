@@ -13,6 +13,7 @@ model User {
   email          String            @unique
   role           String
   isActive       Boolean           @default(true)
+  passwordHash   String?
   createdAt      DateTime          @default(now())
   vehicles       Vehicle[]
   wallet         Wallet?

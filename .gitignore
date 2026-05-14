@@ -8,3 +8,4 @@ prisma/dev.db-journal
 .env.*.local
 *.log
 .claude/
+~$*

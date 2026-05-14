@@ -1,0 +1,12 @@
+mevcut codebase e göre elimizde böyle bir pdf raporu oluşturduk
+ancak mevcut haline eklemeler yaptık ve bu yüzden bazı değişiklikler lazım
+örneğin:
+az önce chatbot desteği ekledik. bunu raporun ilgili kısmını güncelleyerek veya ilgili kısma yeni ufak bir sayfa ekleyerek yapmanı istiyorum.
+ayrıca bazı yerlerin de bu değişiklerden etkilenmesini bekliyoruz. Örneğin: kullanılan UI metodlarına language kısmı da eklenmeli(klasördeki lecture-slides kısmına bak
+orada ui ile ilgil sunumda bulacaksın ilgili kısmın nasıl geçtiğini)
+Slaytta minimum değişiklik ve minimum ekleme ile bu değişikliği nasıl entegre edebiliriz?
+Senden istediğim:
+Bu soruyu öncelikle düşünüp bir plan yap, değişiklik gerektiren(üstte örneklendirdiğim gibi) yerleri tespit edip slayt UI formatlarına uyarak ilgili kısımları değiştir.
+Bunları yaparken lecture-slides klasöründeki ders notlarını ana kaynak olarak kabul et, ayrıca proje scopeunda olmayan ve güncel değişiklikten etkilenmeyen hiçbir yeri değiştirme.
+Tamamen eksiksiz ve UI formatına uyarak bu değişiklikleri göster
+---Eğer aklına bir şey takılırsa, invent etme. Önce clarify etmek için benden yardım iste.

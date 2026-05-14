@@ -2,6 +2,7 @@ import cors from "cors";
 import express, { type Request, type Response } from "express";
 import { registerAdminRoutes } from "./routes/admin";
 import { registerAuditRoutes } from "./routes/audit";
+import { registerAuthRoutes } from "./routes/auth";
 import { registerFavoriteRoutes } from "./routes/favorites";
 import { registerIssueRoutes } from "./routes/issues";
 import { registerOperatorRoutes } from "./routes/operator";
@@ -36,6 +37,7 @@ registerReportRoutes(app);
 registerAdminRoutes(app);
 registerSecurityRoutes(app);
 registerAuditRoutes(app);
+registerAuthRoutes(app);
 
 app.use((error: unknown, _req: Request, res: Response, _next: () => void) => {
   console.error(error);

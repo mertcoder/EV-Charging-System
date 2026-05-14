@@ -38,6 +38,7 @@ const statements = [
     "email" TEXT NOT NULL UNIQUE,
     "role" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "passwordHash" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );`,
   `CREATE TABLE "Vehicle" (
