@@ -16,12 +16,45 @@ interface MapViewProps {
   origin: Coordinates;
   locationMode: "live" | "fallback";
   onSelect: (stationId: string) => void;
+  onReserveClick?: (stationId: string) => void;
 }
 
-export function MapView({ stations, selectedStationId, apiKey, origin, locationMode, onSelect }: MapViewProps) {
+function shortenName(name: string, max = 22) {
+  if (name.length <= max) return name;
+  return `${name.slice(0, max - 1)}…`;
+}
+
+function createStationMarkerIcon(name: string, color: string, selected: boolean) {
+  const radius = selected ? 11 : 9;
+  const label = shortenName(name);
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='160' height='46' viewBox='0 0 160 46'>` +
+    `<text x='80' y='42' font-family='Inter, system-ui, sans-serif' font-size='11' font-weight='700' fill='#1F1C17' stroke='#FAF7F0' stroke-width='3' paint-order='stroke' text-anchor='middle'>${label}</text>` +
+    `<circle cx='80' cy='15' r='${radius}' fill='${color}' stroke='#FFFFFF' stroke-width='3'/>` +
+    `</svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function infoWindowContent(name: string, availability: string, stationId: string) {
+  const color = statusColors[availability] ?? "#6F675C";
+  return (
+    `<div class="map-info-card" style="font-family:inherit;min-width:172px;padding:4px 2px;">` +
+      `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">` +
+        `<span style="width:9px;height:9px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0;"></span>` +
+        `<strong style="font-size:0.95rem;color:#1F1C17;letter-spacing:-0.01em;">${name}</strong>` +
+      `</div>` +
+      `<div style="color:#6F675C;font-size:0.78rem;margin-bottom:8px;">Status: ${availability}</div>` +
+      `<button data-station-id="${stationId}" class="map-info-reserve" ` +
+        `style="appearance:none;border:0;border-radius:999px;padding:6px 14px;background:#1F1C17;color:#FAF7F0;font-weight:700;font-size:0.78rem;cursor:pointer;font-family:inherit;">` +
+        `Reserve here</button>` +
+    `</div>`
+  );
+}
+
+export function MapView({ stations, selectedStationId, apiKey, origin, locationMode, onSelect, onReserveClick }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<any>(null);
   const markers = useRef<any[]>([]);
+  const infoWindow = useRef<any>(null);
   const directionsRenderer = useRef<any>(null);
   const [loadError, setLoadError] = useState("");
   const [routeSummary, setRouteSummary] = useState<{ distance: string; duration: string } | null>(null);
@@ -61,6 +94,10 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
           });
         }
 
+        if (!infoWindow.current) {
+          infoWindow.current = new window.google.maps.InfoWindow({ disableAutoPan: false });
+        }
+
         markers.current.forEach((marker) => marker.setMap(null));
         mapInstance.current.setCenter({ lat: origin.latitude, lng: origin.longitude });
         const userMarker = new window.google.maps.Marker({
@@ -79,22 +116,36 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
         markers.current = [
           userMarker,
           ...stations.map((station) => {
-          const availability = stationAvailability(station);
-          const marker = new window.google.maps.Marker({
-            map: mapInstance.current,
-            position: { lat: station.latitude, lng: station.longitude },
-            title: `${station.name} - ${availability}`,
-            icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: station.id === selectedStationId ? 11 : 9,
-              fillColor: statusColors[availability],
-              fillOpacity: 1,
-              strokeWeight: 3,
-              strokeColor: "#ffffff"
-            }
-          });
-          marker.addListener("click", () => onSelect(station.id));
-          return marker;
+            const availability = stationAvailability(station);
+            const selected = station.id === selectedStationId;
+            const iconUrl = createStationMarkerIcon(station.name, statusColors[availability], selected);
+            const marker = new window.google.maps.Marker({
+              map: mapInstance.current,
+              position: { lat: station.latitude, lng: station.longitude },
+              title: `${station.name} - ${availability}`,
+              icon: {
+                url: iconUrl,
+                anchor: new window.google.maps.Point(80, 15),
+                scaledSize: new window.google.maps.Size(160, 46)
+              }
+            });
+            marker.addListener("click", () => {
+              onSelect(station.id);
+              if (infoWindow.current) {
+                infoWindow.current.setContent(infoWindowContent(station.name, availability, station.id));
+                infoWindow.current.open(mapInstance.current, marker);
+                window.google.maps.event.addListenerOnce(infoWindow.current, "domready", () => {
+                  const btn = document.querySelector(`.map-info-reserve[data-station-id="${station.id}"]`) as HTMLButtonElement | null;
+                  if (btn && onReserveClick) {
+                    btn.onclick = () => {
+                      infoWindow.current?.close();
+                      onReserveClick(station.id);
+                    };
+                  }
+                });
+              }
+            });
+            return marker;
           })
         ];
       })
@@ -103,7 +154,7 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
     return () => {
       cancelled = true;
     };
-  }, [apiKey, stations, selectedStationId, origin.latitude, origin.longitude, locationMode, onSelect]);
+  }, [apiKey, stations, selectedStationId, origin.latitude, origin.longitude, locationMode, onSelect, onReserveClick]);
 
   useEffect(() => {
     if (!apiKey) return;
@@ -138,7 +189,17 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
   }, [apiKey, selectedStationId, origin.latitude, origin.longitude, stations]);
 
   if (!apiKey || loadError) {
-    return <FallbackMap stations={stations} selectedStationId={selectedStationId} origin={origin} locationMode={locationMode} onSelect={onSelect} reason={loadError || "Google Maps API key is not configured yet."} />;
+    return (
+      <FallbackMap
+        stations={stations}
+        selectedStationId={selectedStationId}
+        origin={origin}
+        locationMode={locationMode}
+        onSelect={onSelect}
+        onReserveClick={onReserveClick}
+        reason={loadError || "Google Maps API key is not configured yet."}
+      />
+    );
   }
 
   return (
@@ -160,7 +221,7 @@ export function MapView({ stations, selectedStationId, apiKey, origin, locationM
   );
 }
 
-function FallbackMap({ stations, selectedStationId, reason, locationMode, onSelect }: MapViewProps & { reason: string }) {
+function FallbackMap({ stations, selectedStationId, reason, locationMode, onSelect, onReserveClick }: MapViewProps & { reason: string }) {
   return (
     <div className="map-canvas" aria-label="Google Maps-compatible fallback map">
       <div className="map-note">Fallback map: {reason}</div>
@@ -171,14 +232,22 @@ function FallbackMap({ stations, selectedStationId, reason, locationMode, onSele
       </div>
       <div className="current-location">{locationMode === "live" ? "Current location" : "Demo origin"}</div>
       {stations.map((station, index) => (
-        <button
+        <div
           key={station.id}
-          className={`marker ${availabilityClass(station)} marker-${index} ${station.id === selectedStationId ? "selected" : ""}`}
-          onClick={() => onSelect(station.id)}
-          title={`${station.name}: ${stationAvailability(station)}`}
+          className={`fallback-marker-wrap marker-${index} ${station.id === selectedStationId ? "selected" : ""}`}
         >
-          {index + 1}
-        </button>
+          <button
+            className={`marker ${availabilityClass(station)}`}
+            onClick={() => {
+              onSelect(station.id);
+              if (onReserveClick) onReserveClick(station.id);
+            }}
+            title={`${station.name}: ${stationAvailability(station)}`}
+          >
+            {index + 1}
+          </button>
+          <span className="fallback-marker-label">{shortenName(station.name, 18)}</span>
+        </div>
       ))}
     </div>
   );

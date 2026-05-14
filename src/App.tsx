@@ -157,7 +157,7 @@ export default function App() {
     confirmLabel?: string;
     onConfirm: () => void;
   } | null>(null);
-  const [filters, setFilters] = useState({ connector: "", power: "", maxPrice: "" });
+  const [filters, setFilters] = useState({ connector: "", power: "", maxPrice: "", maxDistance: "10" });
   const [selectedStationId, setSelectedStationId] = useState("station-karsiyaka");
   const [selectedChargerId, setSelectedChargerId] = useState("charger-karsiyaka-ccs-03");
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
@@ -212,25 +212,6 @@ export default function App() {
   const favoriteStationIds = data?.favorites.map((favorite) => favorite.stationId) ?? [];
   const selectedStationIsFavorite = selectedStation ? favoriteStationIds.includes(selectedStation.id) : false;
 
-  const filteredStations = useMemo(() => {
-    if (!data) return [];
-    return data.stations
-      .map((station) => ({
-        ...station,
-        chargers: station.chargers.filter((charger) => {
-          if (filters.connector && charger.connectorType !== filters.connector) return false;
-          if (filters.power && charger.powerKw !== Number(filters.power)) return false;
-          if (filters.maxPrice && charger.pricePerKwh > Number(filters.maxPrice)) return false;
-          return true;
-        })
-      }))
-      .filter((station) => station.chargers.length > 0);
-  }, [data, filters]);
-
-  const estimatedCost = selectedCharger && selectedSlot ? selectedCharger.powerKw * selectedCharger.pricePerKwh * selectedSlot.durationHours : 0;
-  const visibleViewItems = viewItems
-    .filter((item) => roleViews[role].includes(item.id))
-    .map((item) => (item.id === "help" && role === "EV_DRIVER" ? { ...item, label: "Guide & Help" } : item));
   const routeOrigin = userLocation ?? demoOrigin;
   const distanceByStationId = useMemo(() => {
     const stations = data?.stations ?? [];
@@ -241,6 +222,32 @@ export default function App() {
       ])
     ) as Record<string, number>;
   }, [data?.stations, routeOrigin.latitude, routeOrigin.longitude]);
+
+  const filteredStations = useMemo(() => {
+    if (!data) return [];
+    const maxDistance = filters.maxDistance ? Number(filters.maxDistance) : 0;
+    return data.stations
+      .filter((station) => {
+        if (!maxDistance) return true;
+        const distance = distanceByStationId[station.id];
+        return distance == null || distance <= maxDistance;
+      })
+      .map((station) => ({
+        ...station,
+        chargers: station.chargers.filter((charger) => {
+          if (filters.connector && charger.connectorType !== filters.connector) return false;
+          if (filters.power && charger.powerKw !== Number(filters.power)) return false;
+          if (filters.maxPrice && charger.pricePerKwh > Number(filters.maxPrice)) return false;
+          return true;
+        })
+      }))
+      .filter((station) => station.chargers.length > 0);
+  }, [data, filters, distanceByStationId]);
+
+  const estimatedCost = selectedCharger && selectedSlot ? selectedCharger.powerKw * selectedCharger.pricePerKwh * selectedSlot.durationHours : 0;
+  const visibleViewItems = viewItems
+    .filter((item) => roleViews[role].includes(item.id))
+    .map((item) => (item.id === "help" && role === "EV_DRIVER" ? { ...item, label: "Guide & Help" } : item));
 
   useEffect(() => {
     if (signedOut) return;

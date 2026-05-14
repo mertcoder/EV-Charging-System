@@ -478,8 +478,8 @@ nav button.active svg {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 24px;
-  margin-bottom: 32px;
-  padding-bottom: 22px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--divider);
 }
 
@@ -820,6 +820,358 @@ h3 {
   grid-template-columns: minmax(0, 1.4fr) minmax(360px, 0.6fr);
   gap: 16px;
   align-items: start;
+}
+
+.reserve-layout.reserve-layout-stacked {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.reserve-layout-stacked .map-panel {
+  padding: 14px;
+}
+
+.reserve-layout-stacked .map-toolbar {
+  margin-bottom: 8px;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.reserve-layout-stacked .map-toolbar-heading {
+  display: none;
+}
+
+.reserve-layout-stacked .filter-row {
+  gap: 6px;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.reserve-layout-stacked .filter-row select,
+.reserve-layout-stacked .filter-row input {
+  min-width: 0;
+  min-height: 32px;
+  font-size: 0.76rem;
+  padding: 0 22px 0 10px;
+  background-size: 9px 9px;
+  flex: 1 1 0;
+}
+
+.reserve-layout-stacked .filter-row input {
+  padding-right: 10px;
+  flex: 0 0 96px;
+}
+
+.reserve-layout-stacked .vehicle-quick-pick {
+  flex: 1 1 0;
+  min-width: 130px;
+}
+
+.reserve-layout-stacked .vehicle-quick-pick {
+  min-height: 32px;
+  padding: 0 8px 0 10px;
+  font-size: 0.76rem;
+  gap: 6px;
+}
+
+.reserve-layout-stacked .vehicle-quick-pick select {
+  min-height: 30px;
+  font-size: 0.8rem;
+  padding-right: 18px;
+}
+
+.reserve-layout-stacked .vehicle-quick-pick svg {
+  width: 14px;
+  height: 14px;
+}
+
+.reserve-layout-stacked .real-map-shell,
+.reserve-layout-stacked .map-canvas {
+  min-height: 400px;
+}
+
+.vehicle-quick-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 12px;
+  min-height: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.vehicle-quick-pick svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--gold-ink);
+}
+
+.vehicle-quick-pick select {
+  border: 0;
+  background: transparent;
+  min-height: 38px;
+  padding: 0 24px 0 6px;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.vehicle-quick-pick select:focus {
+  box-shadow: none;
+  background: transparent;
+}
+
+.station-strip-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-1);
+  overflow: hidden;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.station-strip-card.selected {
+  border-color: var(--gold);
+  background: var(--surface-2);
+}
+
+.station-strip .station-strip-main {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  min-height: 0;
+  transform: none;
+  box-shadow: none;
+}
+
+.station-strip .station-strip-main:hover {
+  background: var(--surface-3);
+  transform: none;
+  box-shadow: none;
+  border: 0;
+}
+
+.station-strip .station-strip-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--primary);
+  color: var(--bg-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+  min-height: 0;
+  transform: none;
+  box-shadow: none;
+}
+
+.station-strip .station-strip-cta:hover {
+  background: var(--primary-strong);
+  transform: none;
+  box-shadow: none;
+}
+
+.station-strip .station-strip-cta svg {
+  width: 15px;
+  height: 15px;
+}
+
+[data-theme="dark"] .station-strip .station-strip-cta {
+  background: var(--gold);
+  color: var(--bg);
+}
+
+[data-theme="dark"] .station-strip .station-strip-cta:hover {
+  background: var(--gold-hover);
+}
+
+.reserve-dialog-overlay {
+  align-items: flex-start;
+  padding: 32px 16px;
+  overflow-y: auto;
+}
+
+.reserve-dialog-card {
+  width: min(620px, 100%);
+  max-height: calc(100vh - 64px);
+  background: var(--surface-2);
+  border: 1px solid var(--border-bold);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg, 0 24px 60px rgba(0, 0, 0, 0.35));
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  animation: modalRise 140ms ease-out;
+}
+
+.reserve-dialog-header .station-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.reserve-dialog-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.reserve-dialog-header p {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.reserve-dialog-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reserve-dialog-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.reserve-dialog-close:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.reserve-dialog-close svg {
+  width: 17px;
+  height: 17px;
+}
+
+.reserve-dialog-body {
+  display: grid;
+  gap: 10px;
+}
+
+.reserve-dialog-body .booking-section {
+  margin: 0;
+}
+
+.reserve-dialog-body .booking-section-label-row,
+.reserve-dialog-body .booking-section-label {
+  margin-bottom: 6px;
+}
+
+.reserve-dialog-body .match-card {
+  padding: 6px;
+  gap: 8px;
+}
+
+.reserve-dialog-body .match-side {
+  padding: 8px 12px;
+  gap: 4px;
+}
+
+.reserve-dialog-body .match-side select {
+  font-size: 0.92rem;
+}
+
+.reserve-dialog-body .match-side strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.reserve-dialog-body .match-side small {
+  font-size: 0.62rem;
+}
+
+.reserve-dialog-body .match-meta {
+  font-size: 0.75rem;
+}
+
+.reserve-dialog-body .match-card.single {
+  grid-template-columns: 1.1fr 0.9fr;
+}
+
+.reserve-dialog-body .slot-grid {
+  gap: 6px;
+}
+
+.reserve-dialog-body .slot-grid button {
+  min-height: 56px;
+  padding: 8px 10px;
+}
+
+.reserve-dialog-body .duration-row {
+  margin-bottom: 8px;
+}
+
+.reserve-dialog-footer {
+  margin-top: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 0 0;
+  gap: 8px;
+}
+
+.reserve-dialog-footer .booking-summary-cost {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.reserve-dialog-footer .booking-summary-cost strong {
+  font-size: 1.4rem;
+}
+
+.reserve-dialog-footer .booking-summary-warning {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+.reserve-dialog-footer .booking-summary-route {
+  font-size: 0.78rem;
+  padding: 4px 10px;
+}
+
+.reserve-dialog-footer .primary.wide {
+  min-height: 40px;
+}
+
+.reserve-dialog-issue summary {
+  cursor: pointer;
+  font-size: 0.82rem;
 }
 
 .ops-grid,
@@ -1432,6 +1784,35 @@ select option {
 .marker-0 { left: 42%; top: 26%; }
 .marker-1 { left: 67%; top: 42%; }
 .marker-2 { left: 53%; top: 68%; }
+
+.fallback-marker-wrap {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%, -50%);
+}
+
+.fallback-marker-wrap .marker {
+  position: relative;
+  left: 0;
+  top: 0;
+}
+
+.fallback-marker-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  background: var(--surface-2);
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  max-width: 140px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
 
 /* -------------------- Station strip -------------------- */
 .station-strip {
